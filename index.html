@@ -1,41 +1,57 @@
+요구하신 사항을 반영하여 '매입자료없음'을 입력 필드로 변경하고, 금액 관련 항목(매입가, 판매가, 차액)을 오른쪽 정렬하여 가독성을 높인 업데이트 버전입니다.
+
+주요 수정 사항
+매입자료없음 필드화: 체크박스 대신 매입가 옆에 직접 금액을 입력할 수 있는 필드로 변경했습니다.
+
+금액 오른쪽 정렬: 리스트와 입력창 모두 금액(매입가, 판매가, 차액, 매입자료없음)은 text-right 스타일을 적용해 숫자 단위 확인이 쉽도록 했습니다.
+
+레이아웃 최적화: 입력 항목이 많아짐에 따라 그리드 배치를 조정하여 화면을 더 효율적으로 사용합니다.
+
+전체 소스 코드 (V3)
+HTML
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>매출/매입 관리 시스템 V2</title>
+    <title>매출/매입 관리 시스템 V3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        input[type="number"] { text-align: right; }
+    </style>
 </head>
 <body class="bg-gray-100 p-4">
 
+    <!-- 상단 요약 판넬 -->
     <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md mb-6">
-        <h1 class="text-2xl font-bold mb-4 text-blue-600">📊 분기별 정산 요약</h1>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div class="p-4 bg-blue-50 rounded border"><p class="text-sm">1분기 매출</p><p id="q1-total" class="text-xl font-bold">0원</p></div>
-            <div class="p-4 bg-green-50 rounded border"><p class="text-sm">2분기 매출</p><p id="q2-total" class="text-xl font-bold">0원</p></div>
-            <div class="p-4 bg-red-50 rounded border"><p class="text-sm">미납 합계 / 순이익</p><p id="summary-total" class="text-lg font-bold">0 / 0</p></div>
+        <h1 class="text-2xl font-bold mb-4 text-blue-600">📊 2026년 분기별 정산 현황</h1>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-right">
+            <div class="p-4 bg-blue-50 rounded border"><p class="text-sm text-left">1분기 매출 (1~6월)</p><p id="q1-total" class="text-xl font-bold text-blue-700">0원</p></div>
+            <div class="p-4 bg-green-50 rounded border"><p class="text-sm text-left">2분기 매출 (7~12월)</p><p id="q2-total" class="text-xl font-bold text-green-700">0원</p></div>
+            <div class="p-4 bg-red-50 rounded border"><p class="text-sm text-left">미납 합계 / 전체 순이익</p><p id="summary-total" class="text-lg font-bold text-red-600">0 / 0</p></div>
         </div>
         
+        <!-- 검색 영역 -->
         <div class="mt-4 p-4 bg-gray-50 rounded border">
-            <h3 class="text-sm font-bold mb-2">🔍 통합 검색 (고객명 또는 품목 일부 입력)</h3>
-            <input type="text" id="searchInput" onkeyup="filterList()" placeholder="검색어를 입력하세요..." class="w-full border p-2 rounded shadow-sm">
+            <h3 class="text-sm font-bold mb-2">🔍 부분 검색 (고객명 또는 품목 일부)</h3>
+            <input type="text" id="searchInput" onkeyup="filterList()" placeholder="검색어를 입력하고 엔터를 누르거나 기다리세요..." class="w-full border p-2 rounded shadow-sm">
         </div>
     </div>
 
+    <!-- 입력 폼 -->
     <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md mb-6">
         <h2 id="form-title" class="text-xl font-semibold mb-4 text-gray-700">📝 데이터 입력</h2>
-        <input type="hidden" id="edit-id"> <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <input type="hidden" id="edit-id">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="input-container">
             <input type="date" id="date" class="border p-2 rounded">
             <input type="text" id="customer" placeholder="고객명" class="border p-2 rounded">
             <input type="text" id="address" placeholder="주소" class="border p-2 rounded col-span-2">
             <input type="text" id="item" placeholder="품목" class="border p-2 rounded">
             
-            <div class="flex items-center space-x-2 border p-2 rounded bg-yellow-50">
-                <input type="checkbox" id="noPurchaseData" onchange="togglePurchaseInput()">
-                <label for="noPurchaseData" class="text-xs font-bold">매입자료없음</label>
-            </div>
+            <!-- 매입자료없음 입력 항목 -->
+            <input type="number" id="noDataInput" placeholder="매입자료없음" class="border p-2 rounded bg-yellow-50 font-semibold text-orange-600">
             
             <input type="number" id="purchasePrice" placeholder="매입가" class="border p-2 rounded">
             <input type="number" id="salePrice" placeholder="판매가" class="border p-2 rounded">
@@ -51,29 +67,37 @@
                 <option value="미납">미납</option>
             </select>
             <input type="text" id="memo" placeholder="비고" class="border p-2 rounded col-span-2">
-            <div class="col-span-1 flex space-x-2">
-                <button onclick="saveData()" id="save-btn" class="flex-1 bg-green-600 text-white p-2 rounded font-bold">저장</button>
-                <button onclick="resetForm()" class="bg-gray-400 text-white p-2 rounded">취소</button>
+            
+            <div class="col-span-2 flex space-x-2">
+                <button onclick="saveData()" id="save-btn" class="flex-1 bg-blue-600 text-white p-2 rounded font-bold hover:bg-blue-700">데이터 저장/수정</button>
+                <button onclick="resetForm()" class="bg-gray-400 text-white px-4 py-2 rounded">취소</button>
             </div>
         </div>
     </div>
 
+    <!-- 리스트 테이블 -->
     <div class="max-w-6xl mx-auto bg-white p-4 rounded-lg shadow-md overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>
-                <tr class="bg-gray-200 text-xs">
-                    <th class="p-2 border">날짜</th><th class="p-2 border">고객명</th>
-                    <th class="p-2 border">품목</th><th class="p-2 border">매입가</th>
-                    <th class="p-2 border">판매가</th><th class="p-2 border">차액</th>
-                    <th class="p-2 border">결제</th><th class="p-2 border">관리</th>
+                <tr class="bg-gray-100 text-xs uppercase text-gray-600">
+                    <th class="p-3 border">날짜</th>
+                    <th class="p-3 border">고객명</th>
+                    <th class="p-3 border">품목</th>
+                    <th class="p-3 border text-right">매입자료없음</th>
+                    <th class="p-3 border text-right">매입가</th>
+                    <th class="p-3 border text-right">판매가</th>
+                    <th class="p-3 border text-right">차액</th>
+                    <th class="p-3 border text-center">관리</th>
                 </tr>
             </thead>
-            <tbody id="data-list" class="text-sm"></tbody>
+            <tbody id="data-list" class="text-sm">
+                <!-- 데이터가 여기에 렌더링됩니다 -->
+            </tbody>
         </table>
     </div>
 
     <script>
-        // Firebase 설정 (사용자님의 키로 채워주세요)
+        // 1. Firebase 설정 (본인의 Config 정보를 입력하세요)
         const firebaseConfig = {
 	  apiKey: "AIzaSyDj1NuIhzszfuR6F-uNxf7mmiBIMdmdPRo",
 	  authDomain: "cavelsh-97a49.firebaseapp.com",
@@ -86,86 +110,83 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let allData = []; // 검색 필터링을 위한 전체 데이터 보관용
+        let allData = [];
 
-        // 매입자료없음 체크 시 매입가 0 처리
-        function togglePurchaseInput() {
-            const isChecked = document.getElementById('noPurchaseData').checked;
-            const pInput = document.getElementById('purchasePrice');
-            if(isChecked) { pInput.value = 0; pInput.disabled = true; }
-            else { pInput.disabled = false; }
-        }
-
-        // 저장 및 수정 로직
+        // 2. 저장/수정 처리
         async function saveData() {
             const editId = document.getElementById('edit-id').value;
-            const data = {
+            const rawData = {
                 date: document.getElementById('date').value,
                 customer: document.getElementById('customer').value,
                 address: document.getElementById('address').value,
                 item: document.getElementById('item').value,
-                noPurchase: document.getElementById('noPurchaseData').checked,
-                purchasePrice: Number(document.getElementById('purchasePrice').value),
-                salePrice: Number(document.getElementById('salePrice').value),
+                noDataAmount: Number(document.getElementById('noDataInput').value) || 0,
+                purchasePrice: Number(document.getElementById('purchasePrice').value) || 0,
+                salePrice: Number(document.getElementById('salePrice').value) || 0,
                 paymentMethod: document.getElementById('paymentMethod').value,
                 unpaidStatus: document.getElementById('unpaidStatus').value,
                 memo: document.getElementById('memo').value
             };
 
-            const diff = data.salePrice - data.purchasePrice;
+            // 차액 및 통계 항목 계산
+            const diff = rawData.salePrice - rawData.purchasePrice;
             const finalData = {
-                ...data,
+                ...rawData,
                 difference: diff,
-                unpaidAmount: data.unpaidStatus === "미납" ? diff : 0,
-                salesBill: (data.paymentMethod === "세금계산서" || data.paymentMethod === "카드 결제") ? data.salePrice : 0,
-                purchaseBill: (!data.item.includes("수리")) ? data.purchasePrice : 0,
-                noData: (data.paymentMethod === "현금" || data.paymentMethod === "통장 입금") ? data.purchasePrice : 0
+                unpaidAmount: rawData.unpaidStatus === "미납" ? diff : 0,
+                salesBill: (rawData.paymentMethod === "세금계산서" || rawData.paymentMethod === "카드 결제") ? rawData.salePrice : 0,
+                purchaseBill: (!rawData.item.includes("수리")) ? rawData.purchasePrice : 0,
+                // 무자료(무증빙) 금액 계산 로직
+                calculatedNoData: (rawData.paymentMethod === "현금" || rawData.paymentMethod === "통장 입금") ? rawData.purchasePrice : 0
             };
 
             if (editId) {
                 await db.collection("bills").doc(editId).update(finalData);
-                alert("수정되었습니다.");
+                alert("수정 완료");
             } else {
                 await db.collection("bills").add(finalData);
-                alert("저장되었습니다.");
+                alert("저장 완료");
             }
             resetForm();
         }
 
-        // 데이터 불러오기 (실시간 수신)
+        // 3. 실시간 데이터 수신
         db.collection("bills").orderBy("date", "desc").onSnapshot(snapshot => {
             allData = [];
             snapshot.forEach(doc => allData.push({ id: doc.id, ...doc.data() }));
             renderList(allData);
         });
 
-        // 리스트 화면 그리기
-        function renderList(dataItems) {
+        // 4. 화면 렌더링 함수
+        function renderList(items) {
             let q1Total = 0, q2Total = 0, totalUnpaid = 0, totalProfit = 0;
             const listBody = document.getElementById('data-list');
             listBody.innerHTML = "";
 
-            dataItems.forEach(b => {
-                const row = `<tr>
-                    <td class="p-2 border">${b.date}</td>
-                    <td class="p-2 border font-medium">${b.customer}</td>
-                    <td class="p-2 border">${b.item}</td>
-                    <td class="p-2 border">${b.purchasePrice.toLocaleString()}</td>
-                    <td class="p-2 border">${b.salePrice.toLocaleString()}</td>
-                    <td class="p-2 border font-bold text-blue-600">${b.difference.toLocaleString()}</td>
-                    <td class="p-2 border text-xs">${b.paymentMethod}</td>
-                    <td class="p-2 border flex space-x-1">
-                        <button onclick="editDoc('${b.id}')" class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">수정</button>
-                        <button onclick="deleteDoc('${b.id}')" class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">삭제</button>
-                    </td>
-                </tr>`;
+            items.forEach(b => {
+                const row = `
+                    <tr class="hover:bg-gray-50 border-b">
+                        <td class="p-3 border text-xs">${b.date}</td>
+                        <td class="p-3 border font-bold">${b.customer}</td>
+                        <td class="p-3 border">${b.item}</td>
+                        <td class="p-3 border text-right text-orange-600 font-semibold">${(b.noDataAmount || 0).toLocaleString()}</td>
+                        <td class="p-3 border text-right">${b.purchasePrice.toLocaleString()}</td>
+                        <td class="p-3 border text-right">${b.salePrice.toLocaleString()}</td>
+                        <td class="p-3 border text-right font-bold text-blue-600">${b.difference.toLocaleString()}</td>
+                        <td class="p-3 border text-center flex justify-center space-x-1">
+                            <button onclick="editDoc('${b.id}')" class="text-xs bg-blue-500 text-white px-2 py-1 rounded">수정</button>
+                            <button onclick="deleteDoc('${b.id}')" class="text-xs bg-red-500 text-white px-2 py-1 rounded">삭제</button>
+                        </td>
+                    </tr>
+                `;
                 listBody.innerHTML += row;
 
+                // 요약 통계 업데이트
                 totalProfit += b.difference;
-                totalUnpaid += b.unpaidAmount;
+                totalUnpaid += (b.unpaidAmount || 0);
                 const month = parseInt(b.date.split("-")[1]);
-                if (month >= 1 && month <= 6) q1Total += b.salesBill;
-                else if (month >= 7 && month <= 12) q2Total += b.salesBill;
+                if (month >= 1 && month <= 6) q1Total += (b.salesBill || 0);
+                else if (month >= 7 && month <= 12) q2Total += (b.salesBill || 0);
             });
 
             document.getElementById('q1-total').innerText = q1Total.toLocaleString() + "원";
@@ -173,52 +194,49 @@
             document.getElementById('summary-total').innerText = `미납: ${totalUnpaid.toLocaleString()} / 이익: ${totalProfit.toLocaleString()}`;
         }
 
-        // 부분 검색 필터링 로직
+        // 5. 검색 필터링
         function filterList() {
-            const k = document.getElementById('searchInput').value.toLowerCase();
+            const query = document.getElementById('searchInput').value.toLowerCase();
             const filtered = allData.filter(d => 
-                d.customer.toLowerCase().includes(k) || d.item.toLowerCase().includes(k)
+                d.customer.toLowerCase().includes(query) || d.item.toLowerCase().includes(query)
             );
             renderList(filtered);
         }
 
-        // 수정 모드 전환
+        // 6. 수정 모드
         function editDoc(id) {
-            const item = allData.find(d => d.id === id);
+            const data = allData.find(d => d.id === id);
             document.getElementById('edit-id').value = id;
-            document.getElementById('date').value = item.date;
-            document.getElementById('customer').value = item.customer;
-            document.getElementById('address').value = item.address;
-            document.getElementById('item').value = item.item;
-            document.getElementById('noPurchaseData').checked = item.noPurchase || false;
-            document.getElementById('purchasePrice').value = item.purchasePrice;
-            document.getElementById('salePrice').value = item.salePrice;
-            document.getElementById('paymentMethod').value = item.paymentMethod;
-            document.getElementById('unpaidStatus').value = item.unpaidStatus;
-            document.getElementById('memo').value = item.memo;
-            
-            document.getElementById('form-title').innerText = "✏️ 데이터 수정 중...";
-            document.getElementById('save-btn').innerText = "수정 완료";
+            document.getElementById('date').value = data.date;
+            document.getElementById('customer').value = data.customer;
+            document.getElementById('address').value = data.address;
+            document.getElementById('item').value = data.item;
+            document.getElementById('noDataInput').value = data.noDataAmount || 0;
+            document.getElementById('purchasePrice').value = data.purchasePrice;
+            document.getElementById('salePrice').value = data.salePrice;
+            document.getElementById('paymentMethod').value = data.paymentMethod;
+            document.getElementById('unpaidStatus').value = data.unpaidStatus;
+            document.getElementById('memo').value = data.memo;
+
+            document.getElementById('form-title').innerText = "✏️ 내역 수정 중";
+            document.getElementById('save-btn').innerText = "수정 완료하기";
             window.scrollTo(0, 0);
-            togglePurchaseInput();
         }
 
-        // 삭제 로직
+        // 7. 삭제
         async function deleteDoc(id) {
-            if (confirm("정말로 이 내역을 삭제하시겠습니까?")) {
+            if (confirm("삭제된 데이터는 복구할 수 없습니다. 삭제하시겠습니까?")) {
                 await db.collection("bills").doc(id).delete();
-                alert("삭제되었습니다.");
             }
         }
 
-        // 폼 초기화
+        // 8. 초기화
         function resetForm() {
             document.getElementById('edit-id').value = "";
-            document.getElementById('input-form').querySelectorAll('input').forEach(i => i.value = "");
-            document.getElementById('noPurchaseData').checked = false;
-            document.getElementById('purchasePrice').disabled = false;
+            const inputs = document.getElementById('input-container').getElementsByTagName('input');
+            for(let input of inputs) { input.value = ""; }
             document.getElementById('form-title').innerText = "📝 데이터 입력";
-            document.getElementById('save-btn').innerText = "저장";
+            document.getElementById('save-btn').innerText = "데이터 저장/수정";
         }
     </script>
 </body>
