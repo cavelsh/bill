@@ -168,65 +168,70 @@
             renderUI(allData);
         });
 
-        function renderUI(items) {
-            let stats = {
-                q1Sales: 0, q1Purchase: 0, q1NoData: 0,
-                q2Sales: 0, q2Purchase: 0, q2NoData: 0,
-                totalUnpaid: 0, totalProfit: 0
-            };
+function renderUI(items) {
+    let stats = {
+        q1Sales: 0, q1Purchase: 0, q1NoData: 0,
+        q2Sales: 0, q2Purchase: 0, q2NoData: 0,
+        totalUnpaid: 0, totalProfit: 0
+    };
 
-            const listBody = document.getElementById('data-list');
-            listBody.innerHTML = "";
+    const listBody = document.getElementById('data-list');
+    listBody.innerHTML = "";
 
-            items.forEach(b => {
-                const month = parseInt(b.date.split("-")[1]);
-                const isQ1 = (month >= 1 && month <= 6);
-                
-                // 데이터 통계 누적
-                if(isQ1) {
-                    stats.q1Sales += (b.salesBill || 0);
-                    stats.q1Purchase += (b.purchaseBill || 0);
-                    stats.q1NoData += (b.noDataAmount || 0);
-                } else {
-                    stats.q2Sales += (b.salesBill || 0);
-                    stats.q2Purchase += (b.purchaseBill || 0);
-                    stats.q2NoData += (b.noDataAmount || 0);
-                }
-                stats.totalProfit += b.difference;
-                stats.totalUnpaid += (b.unpaidAmount || 0);
+    items.forEach(b => {
+        // 날짜가 없을 경우를 대비한 안전 장치
+        const dateParts = b.date ? b.date.split("-") : [];
+        const month = dateParts.length > 1 ? parseInt(dateParts[1]) : 0;
+        const isQ1 = (month >= 1 && month <= 6);
+        
+        // 숫자 값이 없을 경우 0으로 처리
+        const noDataVal = Number(b.noDataAmount) || 0;
+        const purchaseVal = Number(b.purchasePrice) || 0;
+        const saleVal = Number(b.salePrice) || 0;
+        const diffVal = Number(b.difference) || 0;
 
-                // 테이블 렌더링
-                const row = `
-                    <tr class="hover:bg-blue-50 border-b">
-                        <td class="p-3 border">${b.date}</td>
-                        <td class="p-3 border font-bold">${b.customer}</td>
-                        <td class="p-3 border text-xs text-gray-600">${b.item}</td>
-                        <td class="p-3 border text-right text-orange-700 font-bold">${b.noDataAmount.toLocaleString()}</td>
-                        <td class="p-3 border text-right">${b.purchasePrice.toLocaleString()}</td>
-                        <td class="p-3 border text-right font-bold">${b.salePrice.toLocaleString()}</td>
-                        <td class="p-3 border text-right font-black text-blue-700">${b.difference.toLocaleString()}</td>
-                        <td class="p-3 border text-center flex justify-center space-x-1">
-                            <button onclick="editDoc('${b.id}')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded">수정</button>
-                            <button onclick="deleteDoc('${b.id}')" class="text-xs bg-red-600 text-white px-2 py-1 rounded">삭제</button>
-                        </td>
-                    </tr>
-                `;
-                listBody.innerHTML += row;
-            });
-
-            // 상단 대시보드 값 반영
-            document.getElementById('q1-sales').innerText = stats.q1Sales.toLocaleString() + "원";
-            document.getElementById('q1-purchase').innerText = stats.q1Purchase.toLocaleString() + "원";
-            document.getElementById('q1-nodata').innerText = stats.q1NoData.toLocaleString() + "원";
-            
-            document.getElementById('q2-sales').innerText = stats.q2Sales.toLocaleString() + "원";
-            document.getElementById('q2-purchase').innerText = stats.q2Purchase.toLocaleString() + "원";
-            document.getElementById('q2-nodata').innerText = stats.q2NoData.toLocaleString() + "원";
-
-            document.getElementById('total-unpaid').innerText = stats.totalUnpaid.toLocaleString() + "원";
-            document.getElementById('total-profit').innerText = stats.totalProfit.toLocaleString() + "원";
+        if(month > 0) { // 날짜가 있는 데이터만 통계에 포함
+            if(isQ1) {
+                stats.q1Sales += (b.salesBill || 0);
+                stats.q1Purchase += (b.purchaseBill || 0);
+                stats.q1NoData += noDataVal;
+            } else {
+                stats.q2Sales += (b.salesBill || 0);
+                stats.q2Purchase += (b.purchaseBill || 0);
+                stats.q2NoData += noDataVal;
+            }
         }
+        stats.totalProfit += diffVal;
+        stats.totalUnpaid += (b.unpaidAmount || 0);
 
+        const row = `
+            <tr class="hover:bg-blue-50 border-b text-center">
+                <td class="p-3 border">${b.date || '-'}</td>
+                <td class="p-3 border font-bold text-left">${b.customer || ''}</td>
+                <td class="p-3 border text-xs text-gray-600 text-left">${b.item || ''}</td>
+                <td class="p-3 border text-right text-orange-700 font-bold">${noDataVal.toLocaleString()}</td>
+                <td class="p-3 border text-right">${purchaseVal.toLocaleString()}</td>
+                <td class="p-3 border text-right font-bold">${saleVal.toLocaleString()}</td>
+                <td class="p-3 border text-right font-black text-blue-700">${diffVal.toLocaleString()}</td>
+                <td class="p-3 border flex justify-center space-x-1">
+                    <button onclick="editDoc('${b.id}')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded text-nowrap">수정</button>
+                    <button onclick="deleteDoc('${b.id}')" class="text-xs bg-red-600 text-white px-2 py-1 rounded text-nowrap">삭제</button>
+                </td>
+            </tr>
+        `;
+        listBody.innerHTML += row;
+    });
+
+    // 상단 값 업데이트 부분은 기존과 동일...
+    document.getElementById('q1-sales').innerText = stats.q1Sales.toLocaleString() + "원";
+    document.getElementById('q1-purchase').innerText = stats.q1Purchase.toLocaleString() + "원";
+    document.getElementById('q1-nodata').innerText = stats.q1NoData.toLocaleString() + "원";
+    document.getElementById('q2-sales').innerText = stats.q2Sales.toLocaleString() + "원";
+    document.getElementById('q2-purchase').innerText = stats.q2Purchase.toLocaleString() + "원";
+    document.getElementById('q2-nodata').innerText = stats.q2NoData.toLocaleString() + "원";
+    document.getElementById('total-unpaid').innerText = stats.totalUnpaid.toLocaleString() + "원";
+    document.getElementById('total-profit').innerText = stats.totalProfit.toLocaleString() + "원";
+}
         // 4. 검색/수정/삭제 등 유틸리티
         function filterList() {
             const k = document.getElementById('searchInput').value.toLowerCase();
