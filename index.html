@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>매출/매입 관리 시스템 V10</title>
+    <title>매출/매입 관리 시스템 V11</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -12,16 +12,17 @@
         input[type="number"] { text-align: right; font-family: 'Courier New', Courier, monospace; }
         .stat-card { border-radius: 8px; padding: 1.25rem; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .ime-kor { ime-mode: active; }
-        .row-pending { background-color: #fff7ed; } /* 미처리 항목 배경색 */
+        .row-pending { background-color: #fff7ed; } 
     </style>
 </head>
 <body class="bg-gray-100 p-4">
 
-    <!-- 상단 암호 입력 바 -->
+    <!-- 상단 암호 입력 바 (수정됨) -->
     <div class="max-w-7xl mx-auto bg-slate-800 p-3 rounded-lg shadow-lg mb-6 flex flex-wrap justify-between items-center gap-4">
         <div class="flex items-center space-x-3">
             <span class="text-white font-bold">🔐 데이터 잠금 해제</span>
-            <input type="password" id="mainPwInput" placeholder="암호 0927" class="p-2 rounded w-32 text-center outline-none">
+            <!-- placeholder 문구 변경 -->
+            <input type="password" id="mainPwInput" placeholder="암호 입력" class="p-2 rounded w-32 text-center outline-none">
             <button onclick="toggleAuth()" id="authBtn" class="bg-blue-500 text-white px-4 py-2 rounded font-bold hover:bg-blue-600 transition">확인</button>
         </div>
         <div id="authStatus" class="text-red-400 font-bold">⚠️ 금액 데이터 보호 모드</div>
@@ -68,7 +69,7 @@
                 <div class="p-4 bg-indigo-50 rounded border border-indigo-100 flex justify-between items-center">
                     <div class="flex flex-col">
                         <span class="font-bold text-indigo-700">💰 전체 순이익 (확정 차액)</span>
-                        <span class="text-[10px] text-indigo-400">* 결제방식 '미처리' 데이터는 합계에서 제외됨</span>
+                        <span class="text-[10px] text-indigo-400">* 결제방식 '미처리'는 제외됨</span>
                     </div>
                     <span id="total-profit" class="text-xl font-black text-indigo-600">****</span>
                 </div>
@@ -114,7 +115,7 @@
             </div>
         </div>
 
-        <!-- 테이블 -->
+        <!-- 리스트 테이블 -->
         <div class="max-w-7xl mx-auto bg-white p-4 rounded-lg shadow-md overflow-x-auto">
             <table id="main-table" class="w-full text-sm text-left border-collapse">
                 <thead>
@@ -145,7 +146,7 @@
         const db = firebase.firestore();
 
         let allData = [];
-        let currentFilter = 'none'; // 'none', 'unpaid', 'pending'
+        let currentFilter = 'none'; 
         let currentFilterMode = 'monthly'; 
         let isAuthenticated = false;
 
@@ -179,7 +180,6 @@
             const q = document.getElementById('searchInput').value.toLowerCase();
             let filtered = allData;
 
-            // 기간 필터
             if (currentFilterMode === 'monthly') {
                 const now = new Date();
                 const curM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -189,10 +189,8 @@
                 document.getElementById('view-title').innerText = `📊 전체 기간 정산 요약`;
             }
 
-            // 검색 필터
             filtered = filtered.filter(d => (d.customer || "").toLowerCase().includes(q) || (d.item || "").toLowerCase().includes(q));
             
-            // 특수 필터 (미납/미처리)
             if(currentFilter === 'unpaid') filtered = filtered.filter(d => d.unpaidStatus === "미납");
             if(currentFilter === 'pending') filtered = filtered.filter(d => d.paymentMethod === "미처리");
 
@@ -209,7 +207,6 @@
                 const nodata = Number(b.noDataAmount || 0);
                 const isPending = (b.paymentMethod === "미처리");
 
-                // 미처리가 아닐 때만 요약 합계에 포함
                 if(!isPending) {
                     if(month > 0) {
                         if(month <= 6) { 
@@ -224,7 +221,6 @@
                     }
                     stats.totalProfit += (b.difference || 0);
                 }
-                
                 stats.totalUnpaid += (b.unpaidAmount || 0);
 
                 const fmt = (val) => isAuthenticated ? val.toLocaleString() + "원" : "****";
