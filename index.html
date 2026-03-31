@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>매출/매입 관리 시스템 V14.3</title>
+    <title>매출/매입 관리 시스템 V14.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -12,7 +12,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; }
         input[type="number"] { text-align: right; font-family: 'Courier New', monospace; }
-        .stat-card { border-radius: 16px; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .stat-card { border-radius: 16px; border: 1px solid #e2e8f0; }
         .row-pending { background-color: #fffaf5; }
         .row-unpaid { border-left: 5px solid #ef4444; }
         .custom-scroll::-webkit-scrollbar { height: 6px; }
@@ -45,7 +45,7 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div class="stat-card bg-blue-50/50 p-4">
-                    <h2 id="q1-title" class="font-bold text-blue-900 mb-2 border-b border-blue-100 pb-1 text-sm">📅 상반기 합계</h2>
+                    <h2 class="font-bold text-blue-900 mb-2 border-b border-blue-100 pb-1 text-sm">📅 상반기 합계 (1~6월)</h2>
                     <div class="grid grid-cols-3 gap-2 text-xs">
                         <div><p class="text-slate-400">매출액</p><p id="q1-sales" class="font-bold text-blue-700">****</p></div>
                         <div><p class="text-slate-400">매입액</p><p id="q1-purchase" class="font-bold">****</p></div>
@@ -53,7 +53,7 @@
                     </div>
                 </div>
                 <div class="stat-card bg-emerald-50/50 p-4">
-                    <h2 id="q2-title" class="font-bold text-emerald-900 mb-2 border-b border-emerald-100 pb-1 text-sm">📅 하반기 합계</h2>
+                    <h2 class="font-bold text-emerald-900 mb-2 border-b border-emerald-100 pb-1 text-sm">📅 하반기 합계 (7~12월)</h2>
                     <div class="grid grid-cols-3 gap-2 text-xs">
                         <div><p class="text-slate-400">매출액</p><p id="q2-sales" class="font-bold text-emerald-700">****</p></div>
                         <div><p class="text-slate-400">매입액</p><p id="q2-purchase" class="font-bold">****</p></div>
@@ -62,7 +62,28 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- 이번 달 매입/매출 추가 영역 -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <p class="text-[11px] text-slate-500 font-bold mb-1">THIS MONTH SALES</p>
+                    <p class="text-xs text-slate-400">이번 달 매출</p>
+                    <p id="cur-month-sales" class="text-lg font-black text-blue-600">****</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <p class="text-[11px] text-slate-500 font-bold mb-1">THIS MONTH PURCHASE</p>
+                    <p class="text-xs text-slate-400">이번 달 매입</p>
+                    <p id="cur-month-purchase" class="text-lg font-black text-rose-500">****</p>
+                </div>
+                <div class="p-4 bg-slate-800 rounded-xl text-white col-span-2 flex justify-between items-center">
+                    <div>
+                        <p class="text-[11px] opacity-60 font-bold mb-1">THIS MONTH PROFIT</p>
+                        <p class="text-xs opacity-80">이번 달 순이익</p>
+                    </div>
+                    <span id="cur-month-profit" class="text-2xl font-black text-yellow-400">****</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-4 bg-rose-50 rounded-xl border border-rose-100 flex justify-between items-center">
                     <span class="font-bold text-rose-700 text-sm">🚨 총 미납 잔액</span>
                     <span id="total-unpaid" class="text-xl font-black text-rose-600">****</span>
@@ -70,10 +91,6 @@
                 <div class="p-4 bg-indigo-50 rounded-xl border border-indigo-100 flex justify-between items-center">
                     <span class="font-bold text-indigo-700 text-sm">📈 연간 총 이익</span>
                     <span id="total-profit" class="text-xl font-black text-indigo-600">****</span>
-                </div>
-                <div class="p-4 bg-slate-800 rounded-xl text-white flex justify-between items-center">
-                    <span class="font-bold opacity-80 text-sm">📅 이번달 순익</span>
-                    <span id="cur-month-profit" class="text-xl font-black text-blue-400">****</span>
                 </div>
             </div>
         </div>
@@ -83,10 +100,10 @@
             <h2 id="form-title" class="text-lg font-bold text-slate-800 mb-5">📝 데이터 입력 및 수정</h2>
             <input type="hidden" id="edit-id">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="input-fields">
-                <input type="date" id="date" class="border-2 border-slate-100 p-3 rounded-xl bg-slate-50 outline-none focus:border-blue-400">
-                <input type="text" id="customer" placeholder="고객명" class="border-2 border-slate-100 p-3 rounded-xl outline-none focus:border-blue-400">
-                <input type="text" id="address" placeholder="주소" class="border-2 border-slate-100 p-3 rounded-xl col-span-2 outline-none focus:border-blue-400">
-                <input type="text" id="item" placeholder="품목 상세" class="border-2 border-slate-100 p-3 rounded-xl col-span-2 font-bold outline-none focus:border-blue-400">
+                <input type="date" id="date" class="border-2 border-slate-100 p-3 rounded-xl bg-slate-50 outline-none">
+                <input type="text" id="customer" placeholder="고객명" class="border-2 border-slate-100 p-3 rounded-xl outline-none">
+                <input type="text" id="address" placeholder="주소" class="border-2 border-slate-100 p-3 rounded-xl col-span-2 outline-none">
+                <input type="text" id="item" placeholder="품목 상세" class="border-2 border-slate-100 p-3 rounded-xl col-span-2 font-bold outline-none">
                 <input type="number" id="noDataInput" placeholder="무자료 금액" class="border-2 border-orange-100 p-3 rounded-xl bg-orange-50 font-bold text-orange-700 outline-none">
                 <input type="number" id="purchasePrice" placeholder="매입가" class="border-2 border-slate-100 p-3 rounded-xl outline-none">
                 <input type="number" id="salePrice" placeholder="판매가" class="border-2 border-slate-100 p-3 rounded-xl font-bold outline-none">
@@ -103,21 +120,22 @@
                     <option value="미처리">⏳ 미처리</option>
                 </select>
                 <input type="text" id="memo" placeholder="비고" class="border-2 border-slate-100 p-3 rounded-xl col-span-2 outline-none">
-                <button onclick="saveData()" class="col-span-1 bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg active:scale-95 transition-all">저장</button>
+                <button onclick="saveData()" class="col-span-1 bg-blue-600 text-white p-3 rounded-xl font-bold shadow-lg active:scale-95 transition-all">저장</button>
                 <button onclick="resetForm()" class="col-span-1 bg-slate-200 text-slate-600 p-3 rounded-xl font-bold">초기화</button>
             </div>
 
-            <!-- 검색 및 필터 (최적화 영역) -->
+            <!-- 검색 및 필터 -->
             <div class="flex flex-wrap items-center gap-2 border-t pt-5">
-                <div class="flex-1 flex max-w-md border-2 border-slate-100 rounded-xl overflow-hidden focus-within:border-blue-400 transition-all">
+                <div class="flex-1 flex max-w-md border-2 border-slate-100 rounded-xl overflow-hidden focus-within:border-blue-400 transition-all bg-white">
                     <input type="text" id="searchInput" placeholder="고객명/품목 입력..." class="flex-1 p-2.5 outline-none text-sm">
+                    <button onclick="resetSearch()" class="px-3 text-slate-300 hover:text-slate-500 font-bold text-lg">✕</button>
                     <button onclick="filterList()" class="bg-slate-100 px-4 py-2.5 text-slate-600 font-bold hover:bg-slate-200 transition-all border-l border-slate-100">확인</button>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="toggleFilter('unpaid')" class="bg-rose-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-rose-600 transition-all">미납자</button>
-                    <button onclick="toggleFilter('pending')" class="bg-orange-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-orange-600 transition-all">미처리</button>
-                    <button onclick="setMonthlyFilter()" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 transition-all">이번 달</button>
-                    <button onclick="resetFilters()" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-slate-900 transition-all">전체</button>
+                    <button onclick="toggleFilter('unpaid')" class="bg-rose-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md">미납자</button>
+                    <button onclick="toggleFilter('pending')" class="bg-orange-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md">미처리</button>
+                    <button onclick="setMonthlyFilter()" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md">이번 달</button>
+                    <button onclick="resetFilters()" class="bg-slate-800 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md">전체</button>
                 </div>
             </div>
         </div>
@@ -146,7 +164,7 @@
     </div>
 
     <script>
-        // Firebase 설정 (유지)
+        // Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyDj1NuIhzszfuR6F-uNxf7mmiBIMdmdPRo",
             authDomain: "cavelsh-97a49.firebaseapp.com",
@@ -203,30 +221,20 @@
             const targetYear = document.getElementById('yearSelect').value;
             let filtered = allData;
 
-            // 연도 필터링
             filtered = filtered.filter(d => (d.date || "").startsWith(targetYear));
-
-            // 검색어 필터링 (확인 버튼 클릭 시에만 리스트 갱신됨)
-            if (q) {
-                filtered = filtered.filter(d => (d.customer || "").toLowerCase().includes(q) || (d.item || "").toLowerCase().includes(q));
-            }
-
-            // 특수 필터
+            if (q) filtered = filtered.filter(d => (d.customer || "").toLowerCase().includes(q) || (d.item || "").toLowerCase().includes(q));
             if(currentFilter === 'unpaid') filtered = filtered.filter(d => d.unpaidStatus === "미납");
             if(currentFilter === 'pending') filtered = filtered.filter(d => d.paymentMethod === "미처리");
-
-            // 이번 달 필터 모드
             if (currentFilterMode === 'monthly') {
                 const now = new Date();
                 const curM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
                 filtered = filtered.filter(d => (d.date || "").startsWith(curM));
             }
-
             renderUI(filtered, targetYear);
         }
 
         function renderUI(listItems, targetYear) {
-            let stats = { q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0, totalU:0, totalP:0, curM:0 };
+            let stats = { q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0, totalU:0, totalP:0, curMS:0, curMP:0, curMN:0 };
             const now = new Date();
             const curYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const listBody = document.getElementById('data-list');
@@ -238,7 +246,12 @@
                 const m = parseInt(dateParts[1]) || 0;
                 const isPending = (b.paymentMethod === "미처리");
 
-                if(!isPending && b.date && b.date.startsWith(curYM)) stats.curM += (b.difference || 0);
+                // 이번 달 집계 (미처리가 아닐 때만)
+                if(!isPending && b.date && b.date.startsWith(curYM)) {
+                    stats.curMS += (b.salePrice || 0);
+                    stats.curMP += (b.purchasePrice || 0);
+                    stats.curMN += (b.noDataAmount || 0);
+                }
 
                 if(!isPending && y === targetYear) {
                     if(m >= 1 && m <= 6) { stats.q1S += (b.salesBill||0); stats.q1P += (b.purchaseBill||0); stats.q1N += (b.noDataAmount||0); }
@@ -279,12 +292,17 @@
             document.getElementById('q2-nodata').innerText = mask(stats.q2N);
             document.getElementById('total-unpaid').innerText = mask(stats.totalU);
             document.getElementById('total-profit').innerText = mask(stats.totalP);
-            document.getElementById('cur-month-profit').innerText = mask(stats.curM);
+            
+            // 이번 달 상세 통계 업데이트
+            document.getElementById('cur-month-sales').innerText = mask(stats.curMS);
+            document.getElementById('cur-month-purchase').innerText = mask(stats.curMP + stats.curMN);
+            document.getElementById('cur-month-profit').innerText = mask(stats.curMS - (stats.curMP + stats.curMN));
         }
 
+        function resetSearch() { document.getElementById('searchInput').value = ""; filterList(); }
         function setMonthlyFilter() { currentFilterMode = 'monthly'; filterList(); }
         function toggleFilter(f) { currentFilter = (currentFilter === f) ? 'none' : f; filterList(); }
-        function resetFilters() { currentFilter = 'none'; currentFilterMode = 'all'; document.getElementById('searchInput').value = ""; filterList(); }
+        function resetFilters() { currentFilter = 'none'; currentFilterMode = 'all'; resetSearch(); }
 
         async function saveData() {
             const editId = document.getElementById('edit-id').value;
@@ -313,7 +331,7 @@
             try {
                 if (editId) await db.collection("bills").doc(editId).update(finalData);
                 else await db.collection("bills").add(finalData);
-                alert("성공적으로 저장되었습니다."); resetForm();
+                alert("저장 완료"); resetForm();
             } catch (e) { alert("저장 실패"); }
         }
 
