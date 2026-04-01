@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Management System V15.3</title>
+    <title>Financial Management System V15.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -17,6 +17,8 @@
         .row-repair { border-left: 4px solid #6366f1 !important; background-color: #f5f3ff !important; }
         .custom-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .stat-card { transition: all 0.2s ease; }
+        .stat-card:hover { transform: translateY(-2px); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
@@ -27,14 +29,12 @@
                 <span class="text-xl">📊</span>
                 <span class="font-black text-lg tracking-tighter uppercase text-blue-400">Finance <span class="text-white">Admin</span></span>
             </div>
-            <div class="flex items-center gap-3">
-                <div id="authGroup" class="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700 text-sm">
-                    <input type="password" id="mainPwInput" placeholder="Passcode" class="bg-transparent px-3 py-1 w-24 text-center outline-none font-bold">
-                    <button onclick="toggleAuth()" id="authBtn" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg font-bold transition-all">접속</button>
+            <div id="authArea" class="flex items-center gap-3">
+                <div id="authGroup" class="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
+                    <input type="password" id="mainPwInput" placeholder="Passcode" class="bg-transparent px-3 py-1 w-24 text-center outline-none font-bold text-sm">
+                    <button onclick="toggleAuth()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg font-bold text-sm transition-all">접속</button>
                 </div>
-                <div id="authStatus" class="hidden text-emerald-400 font-bold text-sm px-4 py-2 bg-emerald-400/10 rounded-xl border border-emerald-400/20">
-                    ✅ 시스템 인증됨
-                </div>
+                <div id="authStatus" class="hidden text-emerald-400 font-bold text-sm px-4 py-2 bg-emerald-400/10 rounded-xl border border-emerald-400/20">✅ 시스템 인증됨</div>
             </div>
         </div>
     </nav>
@@ -42,19 +42,43 @@
     <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-            <div class="flex flex-wrap justify-between items-end mb-8 gap-4">
+            <div class="flex flex-wrap justify-between items-end mb-6 gap-4">
                 <div>
-                    <h2 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Financial Overview</h2>
+                    <h2 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Financial Analysis</h2>
                     <div class="flex items-center gap-3">
-                        <h1 class="text-3xl font-black text-slate-800 tracking-tight">대시보드</h1>
-                        <select id="yearSelect" onchange="filterList()" class="bg-slate-100 border-none rounded-lg px-3 py-1 font-bold text-slate-600 outline-none"></select>
+                        <h1 class="text-3xl font-black text-slate-800">대시보드</h1>
+                        <select id="yearSelect" onchange="filterList()" class="bg-slate-100 border-none rounded-lg px-3 py-1 font-bold text-slate-600 outline-none cursor-pointer"></select>
                     </div>
                 </div>
-                <button onclick="downloadExcel()" id="excelBtn" class="bg-slate-100 text-slate-400 px-6 py-2.5 rounded-xl font-bold cursor-not-allowed text-sm transition-all" disabled>
-                    📥 엑셀 파일 내보내기
-                </button>
+                <button onclick="downloadExcel()" id="excelBtn" class="bg-slate-100 text-slate-400 px-6 py-2.5 rounded-xl font-bold cursor-not-allowed text-sm transition-all" disabled>📥 엑셀 내보내기</button>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-container">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="stat-card p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-md">상반기 (H1)</span>
+                        <span class="text-blue-200 text-lg font-black italic">JAN - JUN</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div><p class="text-[10px] text-slate-400 font-bold uppercase">세금 매출</p><p id="q1-sales" class="font-bold text-blue-700 text-sm">****</p></div>
+                        <div><p class="text-[10px] text-slate-400 font-bold uppercase">세금 매입</p><p id="q1-purchase" class="font-bold text-slate-600 text-sm">****</p></div>
+                        <div><p class="text-[10px] text-orange-400 font-bold uppercase">무자료</p><p id="q1-nodata" class="font-bold text-orange-600 text-sm">****</p></div>
+                    </div>
+                </div>
+                <div class="stat-card p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="bg-emerald-600 text-white text-[10px] font-black px-2 py-1 rounded-md">하반기 (H2)</span>
+                        <span class="text-emerald-200 text-lg font-black italic">JUL - DEC</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div><p class="text-[10px] text-slate-400 font-bold uppercase">세금 매출</p><p id="q2-sales" class="font-bold text-emerald-700 text-sm">****</p></div>
+                        <div><p class="text-[10px] text-slate-400 font-bold uppercase">세금 매입</p><p id="q2-purchase" class="font-bold text-slate-600 text-sm">****</p></div>
+                        <div><p class="text-[10px] text-orange-400 font-bold uppercase">무자료</p><p id="q2-nodata" class="font-bold text-orange-600 text-sm">****</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 매출</p><p id="cur-month-sales" class="text-xl font-black text-blue-600">****</p></div>
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 지출</p><p id="cur-month-purchase" class="text-xl font-black text-rose-500">****</p></div>
                 <div class="p-4 bg-rose-600 rounded-2xl text-white shadow-md"><p class="text-[10px] text-rose-200 font-bold mb-1 uppercase">🚨 총 미납 잔액</p><p id="total-unpaid" class="text-xl font-black">****</p></div>
@@ -65,7 +89,7 @@
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <h2 id="form-title" class="font-black text-slate-700 flex items-center gap-2 uppercase text-sm">📝 Data Entry</h2>
-                <div id="live-calc" class="text-xs font-bold px-4 py-1.5 rounded-full"></div>
+                <div id="live-calc" class="text-xs font-bold px-4 py-1.5 rounded-full transition-all"></div>
             </div>
             <div class="p-6" id="input-fields">
                 <input type="hidden" id="edit-id">
@@ -73,13 +97,13 @@
                     <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">날짜</label><input type="date" id="date" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-medium"></div>
                     <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">고객명</label><input type="text" id="customer" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-bold"></div>
                     <div class="md:col-span-2 space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">현장 주소</label><input type="text" id="address" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-medium"></div>
-                    <div class="md:col-span-2 space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">품목 상세 (수리 포함 시 매출 0)</label><input type="text" id="item" oninput="liveCalc()" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-bold bg-blue-50/30"></div>
+                    <div class="md:col-span-2 space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">품목 상세 <span class="text-indigo-500">(수리 포함 시 매출 0)</span></label><input type="text" id="item" oninput="liveCalc()" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none font-bold bg-blue-50/30"></div>
                     <div class="space-y-2"><label class="text-[10px] font-black text-orange-400 ml-1 uppercase">무자료 금액</label><input type="number" id="noDataInput" oninput="liveCalc()" class="w-full border-2 border-orange-100 p-3 rounded-xl outline-none font-bold text-orange-700 bg-orange-50/30"></div>
                     <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">매입 원가</label><input type="number" id="purchasePrice" oninput="liveCalc()" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none font-bold"></div>
                     <div class="space-y-2"><label class="text-[10px] font-black text-blue-500 ml-1 uppercase">판매 가격</label><input type="number" id="salePrice" oninput="liveCalc()" class="w-full border-2 border-blue-100 p-3 rounded-xl outline-none font-black text-blue-700 bg-blue-50/50"></div>
                     <div class="space-y-2">
                         <label class="text-[10px] font-black text-slate-400 ml-1 uppercase">결제 방식</label>
-                        <select id="paymentMethod" onchange="syncUnpaidStatus()" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none font-bold bg-white">
+                        <select id="paymentMethod" onchange="syncUnpaidStatus()" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none font-bold bg-white cursor-pointer">
                             <option value="세금계산서">세금계산서</option><option value="통장 입금">통장 입금</option><option value="카드 결제">카드 결제</option><option value="현금">현금</option><option value="미처리">⚠️ 미처리</option>
                         </select>
                     </div>
@@ -103,15 +127,13 @@
                     <button onclick="filterList()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md">확인</button>
                     <button onclick="resetSearch()" class="px-5 py-2 bg-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-300 transition-all">취소</button>
                 </div>
-
                 <div class="flex gap-2">
-                    <button onclick="toggleFilter('unpaid')" id="btn-unpaid" class="px-4 py-2 rounded-xl text-xs font-black border-2 border-rose-100 text-rose-500">미납 목록</button>
-                    <button onclick="toggleFilter('pending')" id="btn-pending" class="px-4 py-2 rounded-xl text-xs font-black border-2 border-orange-100 text-orange-500">미처리 목록</button>
+                    <button onclick="toggleFilter('unpaid')" id="btn-unpaid" class="px-4 py-2 rounded-xl text-xs font-black border-2 border-rose-100 text-rose-500">미납</button>
+                    <button onclick="toggleFilter('pending')" id="btn-pending" class="px-4 py-2 rounded-xl text-xs font-black border-2 border-orange-100 text-orange-500">미처리</button>
                     <button onclick="setMonthlyFilter()" class="px-4 py-2 rounded-xl text-xs font-black bg-indigo-600 text-white">이번 달</button>
-                    <button onclick="resetFilters()" class="px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-white">전체보기</button>
+                    <button onclick="resetFilters()" class="px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-white">전체</button>
                 </div>
             </div>
-
             <div class="overflow-x-auto custom-scroll">
                 <table id="main-table" class="w-full text-sm text-left border-collapse">
                     <thead>
@@ -201,28 +223,32 @@
             renderUI(filtered, targetYear);
         }
 
-        function resetSearch() {
-            document.getElementById('searchInput').value = "";
-            filterList();
-        }
+        function resetSearch() { document.getElementById('searchInput').value = ""; filterList(); }
 
         function renderUI(listItems, targetYear) {
-            let s = { curMS:0, curMP:0, curMN:0, totalU:0, totalP:0, q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0 };
+            let s = { q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0, totalU:0, totalP:0, curMS:0, curMP:0, curMN:0 };
             const curYM = new Date().toISOString().substring(0, 7);
             const listBody = document.getElementById('data-list');
             listBody.innerHTML = "";
 
             allData.forEach(b => {
-                const y = (b.date||"").split("-")[0];
-                const m = parseInt((b.date||"").split("-")[1]) || 0;
+                const dateParts = b.date ? b.date.split("-") : [];
+                const y = dateParts[0];
+                const m = parseInt(dateParts[1]) || 0;
                 const isPending = (b.paymentMethod === "미처리");
 
-                if(!isPending && b.date && b.date.startsWith(curYM)) { s.curMS += (b.salePrice||0); s.curMP += (b.purchasePrice||0); s.curMN += (b.noDataAmount||0); }
+                // 연간 및 월간 통계 (미처리 항목 제외)
+                if(!isPending && b.date && b.date.startsWith(curYM)) {
+                    s.curMS += (b.salePrice || 0);
+                    s.curMP += (b.purchasePrice || 0);
+                    s.curMN += (b.noDataAmount || 0);
+                }
                 if(!isPending && y === targetYear) {
                     if(m >= 1 && m <= 6) { s.q1S += (b.salePrice||0); s.q1P += (b.purchasePrice||0); s.q1N += (b.noDataAmount||0); }
                     else if(m >= 7 && m <= 12) { s.q2S += (b.salePrice||0); s.q2P += (b.purchasePrice||0); s.q2N += (b.noDataAmount||0); }
                     s.totalP += (b.difference || 0);
                 }
+                // 미납금은 연도와 무관하게 누적
                 s.totalU += (b.unpaidAmount || 0);
             });
 
@@ -233,7 +259,7 @@
                 const fmt = (v) => isAuthenticated ? Number(v).toLocaleString() : "****";
                 
                 listBody.innerHTML += `
-                    <tr class="border-b ${isRepair ? 'row-repair' : (isUnpaid ? 'row-unpaid' : (isPending ? 'row-pending' : ''))} whitespace-nowrap">
+                    <tr class="border-b ${isRepair ? 'row-repair' : (isUnpaid ? 'row-unpaid' : (isPending ? 'row-pending' : ''))} whitespace-nowrap hover:bg-slate-50/50 transition-colors">
                         <td class="p-4 text-[11px] font-bold text-slate-400">${b.date}</td>
                         <td class="p-4 font-black text-slate-800">${b.customer} ${isRepair?'<span class="text-[8px] bg-indigo-500 text-white px-1 rounded ml-1">수리</span>':''}</td>
                         <td class="p-4 text-center text-[10px] font-bold text-slate-500">${b.paymentMethod}</td>
@@ -243,13 +269,22 @@
                         <td class="p-4 text-right font-bold text-slate-900">${isRepair ? '0' : fmt(b.salePrice)}</td>
                         <td class="p-4 text-right font-black text-blue-600 bg-blue-50/30">${fmt(b.difference)}</td>
                         <td class="p-4 text-center space-x-1">
-                            <button onclick="editDoc('${b.id}')" class="text-[10px] font-bold border px-2 py-1 rounded hover:bg-slate-900 hover:text-white">수정</button>
-                            <button onclick="deleteDoc('${b.id}')" class="text-[10px] font-bold border border-rose-100 text-rose-500 px-2 py-1 rounded hover:bg-rose-500 hover:text-white">삭제</button>
+                            <button onclick="editDoc('${b.id}')" class="text-[10px] font-bold border px-2 py-1 rounded hover:bg-slate-900 hover:text-white transition-all">수정</button>
+                            <button onclick="deleteDoc('${b.id}')" class="text-[10px] font-bold border border-rose-100 text-rose-500 px-2 py-1 rounded hover:bg-rose-600 hover:text-white transition-all">삭제</button>
                         </td>
                     </tr>`;
             });
 
             const mask = (v) => isAuthenticated ? Number(v).toLocaleString() + "원" : "****";
+            // 상반기
+            document.getElementById('q1-sales').innerText = mask(s.q1S);
+            document.getElementById('q1-purchase').innerText = mask(s.q1P);
+            document.getElementById('q1-nodata').innerText = mask(s.q1N);
+            // 하반기
+            document.getElementById('q2-sales').innerText = mask(s.q2S);
+            document.getElementById('q2-purchase').innerText = mask(s.q2P);
+            document.getElementById('q2-nodata').innerText = mask(s.q2N);
+            // 하단 요약
             document.getElementById('cur-month-sales').innerText = mask(s.curMS);
             document.getElementById('cur-month-purchase').innerText = mask(s.curMP + s.curMN);
             document.getElementById('total-unpaid').innerText = mask(s.totalU);
@@ -308,7 +343,7 @@
         }
 
         async function deleteDoc(id) { if(confirm("삭제하시겠습니까?")) await db.collection("bills").doc(id).delete(); }
-        function downloadExcel() { if(isAuthenticated) { const wb = XLSX.utils.table_to_book(document.getElementById("main-table")); XLSX.writeFile(wb, "매출장부.xlsx"); } }
+        function downloadExcel() { if(isAuthenticated) { const wb = XLSX.utils.table_to_book(document.getElementById("main-table")); XLSX.writeFile(wb, "회계장부_수출.xlsx"); } }
         function toggleFilter(f) { currentFilter = (currentFilter === f) ? 'none' : f; filterList(); }
         function setMonthlyFilter() { currentFilterMode = 'monthly'; filterList(); }
         function resetFilters() { currentFilter = 'none'; currentFilterMode = 'all'; resetSearch(); }
