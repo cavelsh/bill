@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>재무 관리 프로그램 V15.2</title>
+    <title>Financial Management System V15.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -14,11 +14,9 @@
         input[type="number"] { font-family: 'JetBrains Mono', monospace; text-align: right; }
         .row-pending { background-color: #fefce8 !important; }
         .row-unpaid { border-left: 4px solid #ef4444 !important; background-color: #fef2f2 !important; }
-        .row-repair { border-left: 4px solid #6366f1 !important; background-color: #f5f3ff !important; } /* 수리 항목 강조 */
+        .row-repair { border-left: 4px solid #6366f1 !important; background-color: #f5f3ff !important; }
         .custom-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .stat-card { transition: all 0.2s ease; }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
@@ -27,7 +25,7 @@
         <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <span class="text-xl">📊</span>
-                <span class="font-black text-lg tracking-tighter uppercase text-blue-400">재무 <span class="text-white">관리자</span></span>
+                <span class="font-black text-lg tracking-tighter uppercase text-blue-400">Finance <span class="text-white">Admin</span></span>
             </div>
             <div class="flex items-center gap-3">
                 <div id="authGroup" class="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700 text-sm">
@@ -48,7 +46,7 @@
                 <div>
                     <h2 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Financial Overview</h2>
                     <div class="flex items-center gap-3">
-                        <h1 class="text-3xl font-black text-slate-800 tracking-tight">매입/매출 관리</h1>
+                        <h1 class="text-3xl font-black text-slate-800 tracking-tight">대시보드</h1>
                         <select id="yearSelect" onchange="filterList()" class="bg-slate-100 border-none rounded-lg px-3 py-1 font-bold text-slate-600 outline-none"></select>
                     </div>
                 </div>
@@ -56,118 +54,38 @@
                     📥 엑셀 파일 내보내기
                 </button>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="stat-card p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-md">상반기 (H1)</span>
-                        <span class="text-blue-200 text-xl font-black italic">01-06</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div><p class="text-[10px] text-slate-400 font-bold uppercase">세금 매출</p><p id="q1-sales" class="font-bold text-blue-700">****</p></div>
-                        <div><p class="text-[10px] text-slate-400 font-bold uppercase">세금 매입</p><p id="q1-purchase" class="font-bold text-slate-600">****</p></div>
-                        <div><p class="text-[10px] text-orange-400 font-bold uppercase">무자료</p><p id="q1-nodata" class="font-bold text-orange-600">****</p></div>
-                    </div>
-                </div>
-                <div class="stat-card p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="bg-emerald-600 text-white text-[10px] font-black px-2 py-1 rounded-md">하반기 (H2)</span>
-                        <span class="text-emerald-200 text-xl font-black italic">07-12</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div><p class="text-[10px] text-slate-400 font-bold uppercase">세금 매출</p><p id="q2-sales" class="font-bold text-emerald-700">****</p></div>
-                        <div><p class="text-[10px] text-slate-400 font-bold uppercase">세금 매입</p><p id="q2-purchase" class="font-bold text-slate-600">****</p></div>
-                        <div><p class="text-[10px] text-orange-400 font-bold uppercase">무자료</p><p id="q2-nodata" class="font-bold text-orange-600">****</p></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 매출</p>
-                    <p id="cur-month-sales" class="text-xl font-black text-blue-600">****</p>
-                </div>
-                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 지출</p>
-                    <p id="cur-month-purchase" class="text-xl font-black text-rose-500">****</p>
-                </div>
-                <div class="p-4 bg-rose-600 rounded-2xl text-white shadow-md">
-                    <p class="text-[10px] text-rose-200 font-bold mb-1 uppercase">🚨 총 미납 잔액</p>
-                    <p id="total-unpaid" class="text-xl font-black text-white">****</p>
-                </div>
-                <div class="p-4 bg-slate-800 rounded-2xl text-white shadow-md relative overflow-hidden">
-                    <p class="text-[10px] text-yellow-500 font-bold mb-1 uppercase">📈 연간 예상 순익</p>
-                    <p id="total-profit" class="text-xl font-black text-yellow-400 relative z-10">****</p>
-                    <div class="absolute -right-2 -bottom-2 opacity-10 text-4xl transform -rotate-12">💰</div>
-                </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-container">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 매출</p><p id="cur-month-sales" class="text-xl font-black text-blue-600">****</p></div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 지출</p><p id="cur-month-purchase" class="text-xl font-black text-rose-500">****</p></div>
+                <div class="p-4 bg-rose-600 rounded-2xl text-white shadow-md"><p class="text-[10px] text-rose-200 font-bold mb-1 uppercase">🚨 총 미납 잔액</p><p id="total-unpaid" class="text-xl font-black">****</p></div>
+                <div class="p-4 bg-slate-800 rounded-2xl text-white shadow-md"><p class="text-[10px] text-yellow-500 font-bold mb-1 uppercase">📈 연간 예상 순익</p><p id="total-profit" class="text-xl font-black text-yellow-400">****</p></div>
             </div>
         </div>
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h2 id="form-title" class="font-black text-slate-700 flex items-center gap-2 uppercase text-sm">
-                    <span class="bg-blue-600 text-white p-1 rounded-lg text-xs">📝</span> Data Entry
-                </h2>
-                <div id="live-calc" class="text-xs font-bold px-4 py-1.5 rounded-full transition-all duration-300"></div>
+                <h2 id="form-title" class="font-black text-slate-700 flex items-center gap-2 uppercase text-sm">📝 Data Entry</h2>
+                <div id="live-calc" class="text-xs font-bold px-4 py-1.5 rounded-full"></div>
             </div>
-            
             <div class="p-6" id="input-fields">
                 <input type="hidden" id="edit-id">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 ml-1 uppercase">날짜</label>
-                        <input type="date" id="date" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-medium">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 ml-1 uppercase">고객명</label>
-                        <input type="text" id="customer" placeholder="성함/상호명" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-bold">
-                    </div>
-                    <div class="md:col-span-2 space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 ml-1 uppercase">현장 주소</label>
-                        <input type="text" id="address" placeholder="현장 주소를 입력하세요" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-medium text-slate-600">
-                    </div>
-                    <div class="md:col-span-2 space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 ml-1 uppercase">품목 상세 <span class="text-indigo-500">(수리 포함 시 매출 제외)</span></label>
-                        <input type="text" id="item" oninput="liveCalc()" placeholder="작업 상세 (예: 에어컨 수리)" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-bold text-slate-800 bg-blue-50/30">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-orange-400 ml-1 uppercase">무자료 금액</label>
-                        <input type="number" id="noDataInput" oninput="liveCalc()" placeholder="0" class="w-full border-2 border-orange-100 p-3 rounded-xl focus:border-orange-500 outline-none bg-orange-50/30 font-bold text-orange-700">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 ml-1 uppercase">매입 원가</label>
-                        <input type="number" id="purchasePrice" oninput="liveCalc()" placeholder="0" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none font-bold">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-blue-500 ml-1 uppercase">판매 가격</label>
-                        <input type="number" id="salePrice" oninput="liveCalc()" placeholder="0" class="w-full border-2 border-blue-100 p-3 rounded-xl focus:border-blue-600 outline-none font-black text-blue-700 bg-blue-50/50">
-                    </div>
+                    <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">날짜</label><input type="date" id="date" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-medium"></div>
+                    <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">고객명</label><input type="text" id="customer" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-bold"></div>
+                    <div class="md:col-span-2 space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">현장 주소</label><input type="text" id="address" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-medium"></div>
+                    <div class="md:col-span-2 space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">품목 상세 (수리 포함 시 매출 0)</label><input type="text" id="item" oninput="liveCalc()" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none transition-all font-bold bg-blue-50/30"></div>
+                    <div class="space-y-2"><label class="text-[10px] font-black text-orange-400 ml-1 uppercase">무자료 금액</label><input type="number" id="noDataInput" oninput="liveCalc()" class="w-full border-2 border-orange-100 p-3 rounded-xl outline-none font-bold text-orange-700 bg-orange-50/30"></div>
+                    <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">매입 원가</label><input type="number" id="purchasePrice" oninput="liveCalc()" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none font-bold"></div>
+                    <div class="space-y-2"><label class="text-[10px] font-black text-blue-500 ml-1 uppercase">판매 가격</label><input type="number" id="salePrice" oninput="liveCalc()" class="w-full border-2 border-blue-100 p-3 rounded-xl outline-none font-black text-blue-700 bg-blue-50/50"></div>
                     <div class="space-y-2">
                         <label class="text-[10px] font-black text-slate-400 ml-1 uppercase">결제 방식</label>
-                        <select id="paymentMethod" onchange="syncUnpaidStatus()" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none font-bold bg-white cursor-pointer hover:border-slate-300 appearance-none">
-                            <option value="세금계산서">세금계산서</option>
-                            <option value="통장 입금">통장 입금</option>
-                            <option value="카드 결제">카드 결제</option>
-                            <option value="현금">현금</option>
-                            <option value="미처리">⚠️ 미처리</option>
+                        <select id="paymentMethod" onchange="syncUnpaidStatus()" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none font-bold bg-white">
+                            <option value="세금계산서">세금계산서</option><option value="통장 입금">통장 입금</option><option value="카드 결제">카드 결제</option><option value="현금">현금</option><option value="미처리">⚠️ 미처리</option>
                         </select>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 ml-1 uppercase">입금 상태</label>
-                        <select id="unpaidStatus" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none font-bold bg-white cursor-pointer hover:border-slate-300 appearance-none">
-                            <option value="입금완료">✅ 입금완료</option>
-                            <option value="미납">🚨 미납</option>
-                            <option value="미처리">⏳ 미처리</option>
-                        </select>
-                    </div>
-                    <div class="md:col-span-2 space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 ml-1 uppercase">메모</label>
-                        <input type="text" id="memo" placeholder="추가 전달사항" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none">
                     </div>
                 </div>
-
                 <div class="flex gap-3">
-                    <button onclick="saveData()" class="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-black shadow-lg hover:bg-black active:scale-95 transition-all">내역 저장하기</button>
+                    <button onclick="saveData()" class="flex-1 bg-slate-900 text-white p-4 rounded-2xl font-black shadow-lg hover:bg-black transition-all">내역 저장하기</button>
                     <button onclick="resetForm()" class="px-8 bg-slate-200 text-slate-600 p-4 rounded-2xl font-bold hover:bg-slate-300 transition-all">취소</button>
                 </div>
             </div>
@@ -175,15 +93,22 @@
 
         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-6 border-b border-slate-100 flex flex-wrap gap-4 items-center justify-between">
-                <div class="flex-1 min-w-[300px] relative">
-                    <input type="text" id="searchInput" oninput="filterList()" placeholder="고객명 혹은 품목 검색..." class="w-full bg-slate-100 border-none p-3 pl-10 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    <span class="absolute left-3 top-3.5 opacity-30 text-sm">🔍</span>
+                <div class="flex-1 min-w-[300px] flex gap-2">
+                    <div class="relative flex-1">
+                        <input type="text" id="searchInput" placeholder="고객명 혹은 품목 검색..." 
+                               class="w-full bg-slate-100 border-none p-3 pl-10 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                               onkeyup="if(window.event.keyCode==13){filterList()}">
+                        <span class="absolute left-3 top-3.5 opacity-30 text-sm">🔍</span>
+                    </div>
+                    <button onclick="filterList()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md">확인</button>
+                    <button onclick="resetSearch()" class="px-5 py-2 bg-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-300 transition-all">취소</button>
                 </div>
+
                 <div class="flex gap-2">
-                    <button onclick="toggleFilter('unpaid')" id="btn-unpaid" class="px-4 py-2 rounded-xl text-xs font-black border-2 border-rose-100 text-rose-500 hover:bg-rose-50 transition-all">미납 목록</button>
-                    <button onclick="toggleFilter('pending')" id="btn-pending" class="px-4 py-2 rounded-xl text-xs font-black border-2 border-orange-100 text-orange-500 hover:bg-orange-50 transition-all">미처리 목록</button>
-                    <button onclick="setMonthlyFilter()" class="px-4 py-2 rounded-xl text-xs font-black bg-indigo-600 text-white shadow-md hover:bg-indigo-700 transition-all">이번 달</button>
-                    <button onclick="resetFilters()" class="px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-white shadow-md hover:bg-black transition-all">전체보기</button>
+                    <button onclick="toggleFilter('unpaid')" id="btn-unpaid" class="px-4 py-2 rounded-xl text-xs font-black border-2 border-rose-100 text-rose-500">미납 목록</button>
+                    <button onclick="toggleFilter('pending')" id="btn-pending" class="px-4 py-2 rounded-xl text-xs font-black border-2 border-orange-100 text-orange-500">미처리 목록</button>
+                    <button onclick="setMonthlyFilter()" class="px-4 py-2 rounded-xl text-xs font-black bg-indigo-600 text-white">이번 달</button>
+                    <button onclick="resetFilters()" class="px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-white">전체보기</button>
                 </div>
             </div>
 
@@ -191,15 +116,7 @@
                 <table id="main-table" class="w-full text-sm text-left border-collapse">
                     <thead>
                         <tr class="bg-slate-50 text-slate-400 uppercase text-[10px] font-black tracking-widest border-b">
-                            <th class="p-4">날짜</th>
-                            <th class="p-4">고객명 / 상태</th>
-                            <th class="p-4 text-center">방식</th>
-                            <th class="p-4">품목 상세</th>
-                            <th class="p-4 text-right">무자료</th>
-                            <th class="p-4 text-right">매입가</th>
-                            <th class="p-4 text-right">판매가</th>
-                            <th class="p-4 text-right bg-slate-50/80">예상순익</th>
-                            <th class="p-4 text-center">관리</th>
+                            <th class="p-4">날짜</th><th class="p-4">고객명/상태</th><th class="p-4 text-center">방식</th><th class="p-4">품목 상세</th><th class="p-4 text-right">무자료</th><th class="p-4 text-right">매입가</th><th class="p-4 text-right">판매가</th><th class="p-4 text-right bg-slate-50/80">예상순익</th><th class="p-4 text-center">관리</th>
                         </tr>
                     </thead>
                     <tbody id="data-list" class="divide-y divide-slate-50"></tbody>
@@ -209,7 +126,6 @@
     </main>
 
     <script>
-        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDj1NuIhzszfuR6F-uNxf7mmiBIMdmdPRo",
             authDomain: "cavelsh-97a49.firebaseapp.com",
@@ -228,111 +144,86 @@
         let isAuthenticated = false;
 
         window.onload = () => {
-            const dateInput = document.getElementById('date');
-            const now = new Date();
-            dateInput.value = now.toISOString().substring(0, 10);
-            
-            const yearSelect = document.getElementById('yearSelect');
-            const curYear = now.getFullYear();
-            for(let i = curYear - 2; i <= curYear + 2; i++) {
-                const opt = document.createElement('option');
-                opt.value = i; opt.innerText = `${i}년 회계 기록`;
-                if(i === curYear) opt.selected = true;
-                yearSelect.appendChild(opt);
+            document.getElementById('date').value = new Date().toISOString().substring(0, 10);
+            const ys = document.getElementById('yearSelect');
+            const curY = new Date().getFullYear();
+            for(let i = curY - 2; i <= curY + 2; i++) {
+                const opt = document.createElement('option'); opt.value = i; opt.innerText = `${i}년 회계 기록`;
+                if(i === curY) opt.selected = true; ys.appendChild(opt);
             }
         };
 
         function toggleAuth() {
-            const pw = document.getElementById('mainPwInput').value;
-            if (pw === "0927") {
+            if (document.getElementById('mainPwInput').value === "0927") {
                 isAuthenticated = true;
                 document.getElementById('authGroup').classList.add('hidden');
                 document.getElementById('authStatus').classList.remove('hidden');
                 document.getElementById('excelBtn').disabled = false;
                 document.getElementById('excelBtn').className = "bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer hover:bg-emerald-600 transition-all shadow-md text-sm";
                 filterList();
-            } else { alert("비밀번호가 일치하지 않습니다."); }
+            } else { alert("비밀번호 오류"); }
         }
 
-        // 실시간 계산기: "수리" 조건 포함
         function liveCalc() {
-            const itemText = document.getElementById('item').value;
+            const item = document.getElementById('item').value;
             const noData = Number(document.getElementById('noDataInput').value) || 0;
             const purchase = Number(document.getElementById('purchasePrice').value) || 0;
             let sale = Number(document.getElementById('salePrice').value) || 0;
-
-            // 품목에 "수리"가 있으면 판매가를 0으로 계산
-            const isRepair = itemText.includes("수리");
+            
+            const isRepair = item.includes("수리");
             if (isRepair) sale = 0;
 
             const profit = sale - (noData + purchase);
-            const calcDiv = document.getElementById('live-calc');
-            
+            const div = document.getElementById('live-calc');
             if (sale > 0 || purchase > 0 || noData > 0 || isRepair) {
-                const label = isRepair ? "🛠️ 수리 항목(매출제외)" : "💰 예상 순익";
-                calcDiv.innerText = `${label}: ${profit.toLocaleString()}원`;
-                calcDiv.className = profit >= 0 
-                    ? "text-xs font-black text-blue-600 bg-blue-100 px-4 py-1.5 rounded-full" 
-                    : "text-xs font-black text-rose-600 bg-rose-100 px-4 py-1.5 rounded-full";
-            } else { calcDiv.innerText = ""; }
+                div.innerText = (isRepair ? "🛠️ 수리 제외 순익: " : "💰 예상 순익: ") + profit.toLocaleString() + "원";
+                div.className = profit >= 0 ? "text-xs font-black text-blue-600 bg-blue-100 px-4 py-1.5 rounded-full" : "text-xs font-black text-rose-600 bg-rose-100 px-4 py-1.5 rounded-full";
+            } else { div.innerText = ""; }
         }
 
-        function syncUnpaidStatus() {
-            const method = document.getElementById('paymentMethod').value;
-            const status = document.getElementById('unpaidStatus');
-            if (method === "미처리") status.value = "미처리";
-            else if (status.value === "미처리") status.value = "입금완료";
-        }
-
-        db.collection("bills").orderBy("date", "desc").onSnapshot(snapshot => {
-            allData = [];
-            snapshot.forEach(doc => allData.push({ id: doc.id, ...doc.data() }));
+        db.collection("bills").orderBy("date", "desc").onSnapshot(snap => {
+            allData = []; snap.forEach(doc => allData.push({ id: doc.id, ...doc.data() }));
             filterList();
         });
 
         function filterList() {
             const q = document.getElementById('searchInput').value.toLowerCase();
             const targetYear = document.getElementById('yearSelect').value;
-            let filtered = allData;
+            let filtered = allData.filter(d => (d.date || "").startsWith(targetYear));
 
-            filtered = filtered.filter(d => (d.date || "").startsWith(targetYear));
-            if (q) filtered = filtered.filter(d => (d.customer || "").toLowerCase().includes(q) || (d.item || "").toLowerCase().includes(q));
-            
-            if(currentFilter === 'unpaid') filtered = filtered.filter(d => d.unpaidStatus === "미납");
-            if(currentFilter === 'pending') filtered = filtered.filter(d => d.paymentMethod === "미처리");
-            
+            if (q) filtered = filtered.filter(d => (d.customer||"").toLowerCase().includes(q) || (d.item||"").toLowerCase().includes(q));
+            if (currentFilter === 'unpaid') filtered = filtered.filter(d => d.unpaidStatus === "미납");
+            if (currentFilter === 'pending') filtered = filtered.filter(d => d.paymentMethod === "미처리");
             if (currentFilterMode === 'monthly') {
-                const now = new Date();
-                const curM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                const curM = new Date().toISOString().substring(0, 7);
                 filtered = filtered.filter(d => (d.date || "").startsWith(curM));
             }
             renderUI(filtered, targetYear);
         }
 
+        function resetSearch() {
+            document.getElementById('searchInput').value = "";
+            filterList();
+        }
+
         function renderUI(listItems, targetYear) {
-            let stats = { q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0, totalU:0, totalP:0, curMS:0, curMP:0, curMN:0 };
-            const now = new Date();
-            const curYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            let s = { curMS:0, curMP:0, curMN:0, totalU:0, totalP:0, q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0 };
+            const curYM = new Date().toISOString().substring(0, 7);
             const listBody = document.getElementById('data-list');
             listBody.innerHTML = "";
 
             allData.forEach(b => {
-                const dateParts = b.date ? b.date.split("-") : [];
-                const y = dateParts[0];
-                const m = parseInt(dateParts[1]) || 0;
+                const y = (b.date||"").split("-")[0];
+                const m = parseInt((b.date||"").split("-")[1]) || 0;
                 const isPending = (b.paymentMethod === "미처리");
 
-                if(!isPending && b.date && b.date.startsWith(curYM)) {
-                    stats.curMS += (b.salePrice || 0);
-                    stats.curMP += (b.purchasePrice || 0);
-                    stats.curMN += (b.noDataAmount || 0);
-                }
+                if(!isPending && b.date && b.date.startsWith(curYM)) { s.curMS += (b.salePrice||0); s.curMP += (b.purchasePrice||0); s.curMN += (b.noDataAmount||0); }
                 if(!isPending && y === targetYear) {
-                    if(m >= 1 && m <= 6) { stats.q1S += (b.salePrice||0); stats.q1P += (b.purchasePrice||0); stats.q1N += (b.noDataAmount||0); }
-                    else if(m >= 7 && m <= 12) { stats.q2S += (b.salePrice||0); stats.q2P += (b.purchasePrice||0); stats.q2N += (b.noDataAmount||0); }
-                    stats.totalP += (b.difference || 0);
+                    if(m >= 1 && m <= 6) { s.q1S += (b.salePrice||0); s.q1P += (b.purchasePrice||0); s.q1N += (b.noDataAmount||0); }
+                    else if(m >= 7 && m <= 12) { s.q2S += (b.salePrice||0); s.q2P += (b.purchasePrice||0); s.q2N += (b.noDataAmount||0); }
+                    s.totalP += (b.difference || 0);
                 }
-                stats.totalU += (b.unpaidAmount || 0);
+                s.totalU += (b.unpaidAmount || 0);
             });
 
             listItems.forEach(b => {
@@ -341,88 +232,55 @@
                 const isRepair = (b.item || "").includes("수리");
                 const fmt = (v) => isAuthenticated ? Number(v).toLocaleString() : "****";
                 
-                // 행 클래스 지정
-                let rowClass = "hover:bg-slate-50";
-                if (isRepair) rowClass = "row-repair";
-                if (isUnpaid) rowClass = "row-unpaid";
-                if (isPending) rowClass = "row-pending";
-
                 listBody.innerHTML += `
-                    <tr class="transition-colors border-b whitespace-nowrap ${rowClass}">
-                        <td class="p-4 text-[11px] font-bold text-slate-400">${b.date || ''}</td>
-                        <td class="p-4">
-                            <div class="font-black text-slate-800">${b.customer || '미기입'}</div>
-                            <div class="flex gap-1 mt-1">
-                                ${isUnpaid ? '<span class="text-[8px] bg-rose-500 text-white px-1 py-0.5 rounded font-black">미납</span>' : ''}
-                                ${isPending ? '<span class="text-[8px] bg-orange-500 text-white px-1 py-0.5 rounded font-black">미처리</span>' : ''}
-                                ${isRepair ? '<span class="text-[8px] bg-indigo-500 text-white px-1 py-0.5 rounded font-black">수리</span>' : ''}
-                            </div>
-                        </td>
-                        <td class="p-4 text-center"><span class="text-[10px] px-2 py-1 rounded-md font-black bg-white/50 border border-slate-100 text-slate-600">${b.paymentMethod || ''}</span></td>
-                        <td class="p-4 text-xs max-w-[200px] truncate font-medium text-slate-500" title="${b.item}">${b.item || ''}</td>
-                        <td class="p-4 text-right text-orange-600 font-bold">${fmt(b.noDataAmount || 0)}</td>
-                        <td class="p-4 text-right text-slate-400 font-medium">${fmt(b.purchasePrice || 0)}</td>
-                        <td class="p-4 text-right font-bold text-slate-900">${isRepair ? '0 (수리)' : fmt(b.salePrice || 0)}</td>
-                        <td class="p-4 text-right font-black text-blue-600 bg-blue-50/30">${fmt(b.difference || 0)}</td>
+                    <tr class="border-b ${isRepair ? 'row-repair' : (isUnpaid ? 'row-unpaid' : (isPending ? 'row-pending' : ''))} whitespace-nowrap">
+                        <td class="p-4 text-[11px] font-bold text-slate-400">${b.date}</td>
+                        <td class="p-4 font-black text-slate-800">${b.customer} ${isRepair?'<span class="text-[8px] bg-indigo-500 text-white px-1 rounded ml-1">수리</span>':''}</td>
+                        <td class="p-4 text-center text-[10px] font-bold text-slate-500">${b.paymentMethod}</td>
+                        <td class="p-4 text-xs font-medium text-slate-500 max-w-[200px] truncate">${b.item}</td>
+                        <td class="p-4 text-right text-orange-600 font-bold">${fmt(b.noDataAmount)}</td>
+                        <td class="p-4 text-right text-slate-400">${fmt(b.purchasePrice)}</td>
+                        <td class="p-4 text-right font-bold text-slate-900">${isRepair ? '0' : fmt(b.salePrice)}</td>
+                        <td class="p-4 text-right font-black text-blue-600 bg-blue-50/30">${fmt(b.difference)}</td>
                         <td class="p-4 text-center space-x-1">
-                            <button onclick="editDoc('${b.id}')" class="text-[10px] font-bold bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-900 hover:text-white transition-all shadow-sm">수정</button>
-                            <button onclick="deleteDoc('${b.id}')" class="text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 px-3 py-1.5 rounded-lg hover:bg-rose-600 hover:text-white transition-all shadow-sm">삭제</button>
+                            <button onclick="editDoc('${b.id}')" class="text-[10px] font-bold border px-2 py-1 rounded hover:bg-slate-900 hover:text-white">수정</button>
+                            <button onclick="deleteDoc('${b.id}')" class="text-[10px] font-bold border border-rose-100 text-rose-500 px-2 py-1 rounded hover:bg-rose-500 hover:text-white">삭제</button>
                         </td>
                     </tr>`;
             });
 
             const mask = (v) => isAuthenticated ? Number(v).toLocaleString() + "원" : "****";
-            document.getElementById('q1-sales').innerHTML = mask(stats.q1S);
-            document.getElementById('q1-purchase').innerHTML = mask(stats.q1P);
-            document.getElementById('q1-nodata').innerHTML = mask(stats.q1N);
-            document.getElementById('q2-sales').innerHTML = mask(stats.q2S);
-            document.getElementById('q2-purchase').innerHTML = mask(stats.q2P);
-            document.getElementById('q2-nodata').innerHTML = mask(stats.q2N);
-            document.getElementById('total-unpaid').innerHTML = mask(stats.totalU);
-            document.getElementById('total-profit').innerHTML = mask(stats.totalP);
-            document.getElementById('cur-month-sales').innerHTML = mask(stats.curMS);
-            document.getElementById('cur-month-purchase').innerHTML = mask(stats.curMP + stats.curMN);
+            document.getElementById('cur-month-sales').innerText = mask(s.curMS);
+            document.getElementById('cur-month-purchase').innerText = mask(s.curMP + s.curMN);
+            document.getElementById('total-unpaid').innerText = mask(s.totalU);
+            document.getElementById('total-profit').innerText = mask(s.totalP);
         }
-
-        function setMonthlyFilter() { currentFilterMode = 'monthly'; filterList(); }
-        function toggleFilter(f) { 
-            currentFilter = (currentFilter === f) ? 'none' : f; 
-            filterList(); 
-        }
-        function resetFilters() { currentFilter = 'none'; currentFilterMode = 'all'; document.getElementById('searchInput').value = ""; filterList(); }
 
         async function saveData() {
-            const editId = document.getElementById('edit-id').value;
-            const itemValue = document.getElementById('item').value;
-            
-            // "수리" 조건 저장 시 적용
-            const isRepair = itemValue.includes("수리");
-            const saleInput = isRepair ? 0 : (Number(document.getElementById('salePrice').value) || 0);
+            const id = document.getElementById('edit-id').value;
+            const item = document.getElementById('item').value;
+            const isRepair = item.includes("수리");
+            const sale = isRepair ? 0 : (Number(document.getElementById('salePrice').value) || 0);
 
-            const docData = {
+            const d = {
                 date: document.getElementById('date').value,
                 customer: document.getElementById('customer').value,
                 address: document.getElementById('address').value,
-                item: itemValue,
+                item: item,
                 noDataAmount: Number(document.getElementById('noDataInput').value) || 0,
                 purchasePrice: Number(document.getElementById('purchasePrice').value) || 0,
-                salePrice: saleInput,
+                salePrice: sale,
                 paymentMethod: document.getElementById('paymentMethod').value,
                 unpaidStatus: document.getElementById('unpaidStatus').value,
                 memo: document.getElementById('memo').value
             };
             
-            if (!docData.date || !docData.customer) { alert("날짜와 고객명은 필수 입력사항입니다."); return; }
-            
-            const diff = docData.salePrice - (docData.purchasePrice + docData.noDataAmount);
-            const finalData = { ...docData, difference: diff, unpaidAmount: docData.unpaidStatus === "미납" ? diff : 0 };
+            const diff = d.salePrice - (d.purchasePrice + d.noDataAmount);
+            const final = { ...d, difference: diff, unpaidAmount: d.unpaidStatus === "미납" ? diff : 0 };
 
-            try {
-                if (editId) await db.collection("bills").doc(editId).update(finalData);
-                else await db.collection("bills").add(finalData);
-                alert(isRepair ? "수리 항목으로 매출 0원 처리되어 저장되었습니다." : "정상적으로 저장되었습니다.");
-                resetForm();
-            } catch (e) { alert("데이터 저장 중 오류가 발생했습니다."); }
+            if (id) await db.collection("bills").doc(id).update(final);
+            else await db.collection("bills").add(final);
+            resetForm();
         }
 
         function editDoc(id) {
@@ -438,26 +296,23 @@
             document.getElementById('paymentMethod').value = d.paymentMethod;
             document.getElementById('unpaidStatus').value = d.unpaidStatus;
             document.getElementById('memo').value = d.memo;
-            document.getElementById('form-title').innerHTML = "<span class='text-blue-600'>✏️ 내역 수정 중...</span>";
-            window.scrollTo({top: 0, behavior: 'smooth'});
             liveCalc();
+            window.scrollTo({top:0, behavior:'smooth'});
         }
 
-        async function deleteDoc(id) { if(confirm("삭제한 데이터는 되돌릴 수 없습니다. 삭제하시겠습니까?")) await db.collection("bills").doc(id).delete(); }
-        
         function resetForm() { 
             document.getElementById('edit-id').value = ""; 
             document.querySelectorAll('#input-fields input').forEach(i => i.value = ""); 
             document.getElementById('date').value = new Date().toISOString().substring(0, 10);
-            document.getElementById('form-title').innerHTML = "<span class='bg-blue-600 text-white p-1 rounded-lg text-xs'>📝</span> Data Entry";
-            document.getElementById('live-calc').innerText = "";
+            liveCalc();
         }
 
-        function downloadExcel() { 
-            if(!isAuthenticated) return; 
-            const wb = XLSX.utils.table_to_book(document.getElementById("main-table")); 
-            XLSX.writeFile(wb, `매출_지출_리포트_${new Date().toISOString().split('T')[0]}.xlsx`); 
-        }
+        async function deleteDoc(id) { if(confirm("삭제하시겠습니까?")) await db.collection("bills").doc(id).delete(); }
+        function downloadExcel() { if(isAuthenticated) { const wb = XLSX.utils.table_to_book(document.getElementById("main-table")); XLSX.writeFile(wb, "매출장부.xlsx"); } }
+        function toggleFilter(f) { currentFilter = (currentFilter === f) ? 'none' : f; filterList(); }
+        function setMonthlyFilter() { currentFilterMode = 'monthly'; filterList(); }
+        function resetFilters() { currentFilter = 'none'; currentFilterMode = 'all'; resetSearch(); }
+        function syncUnpaidStatus() { if(document.getElementById('paymentMethod').value === "미처리") document.getElementById('unpaidStatus').value = "미처리"; }
     </script>
 </body>
 </html>
