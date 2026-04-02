@@ -43,7 +43,7 @@
                 <div>
                     <h2 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Financial Analysis</h2>
                     <div class="flex items-center gap-3">
-                        <h1 class="text-3xl font-black text-slate-800">대시보드</h1>
+                        <h1 class="text-3xl font-black text-slate-800">매입/매출 관리</h1>
                         <select id="yearSelect" onchange="filterList()" class="bg-slate-100 border-none rounded-lg px-3 py-1 font-bold text-slate-600 outline-none"></select>
                     </div>
                 </div>
@@ -91,7 +91,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
                     <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">날짜</label><input type="date" id="date" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none"></div>
                     <div class="space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">고객명</label><input type="text" id="customer" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none font-bold"></div>
-                    <div class="md:col-span-2 space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">현장 주소</label><input type="text" id="address" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none"></div>
+                    <div class="md:col-span-2 space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">주소</label><input type="text" id="address" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none"></div>
                     <div class="md:col-span-2 space-y-2"><label class="text-[10px] font-black text-slate-400 ml-1 uppercase">품목 상세 (수리 포함 시 매출 0)</label><input type="text" id="item" oninput="liveCalc()" class="w-full border-2 border-slate-100 p-3 rounded-xl focus:border-blue-500 outline-none font-bold bg-blue-50/30"></div>
                     
                     <div class="space-y-2"><label class="text-[10px] font-black text-orange-400 ml-1 uppercase">무자료 금액</label><input type="text" id="noDataInput" oninput="formatCurrency(this); liveCalc()" class="currency-input w-full border-2 border-orange-100 p-3 rounded-xl outline-none font-bold text-orange-700 bg-orange-50/30"></div>
