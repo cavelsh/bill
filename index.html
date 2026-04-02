@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Management System V15.8</title>
+    <title>Financial Management System V15.9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -24,7 +24,7 @@
         <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <span class="text-xl">📊</span>
-                <span class="font-black text-lg tracking-tighter uppercase text-blue-400">Finance <span class="text-white">Admin</span></span>
+                <span class="font-black text-lg tracking-tighter uppercase text-blue-400">매입/매출 <span class="text-white">Admin</span></span>
             </div>
             <div class="flex items-center gap-3">
                 <div id="authGroup" class="flex items-center gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
@@ -41,7 +41,7 @@
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
             <div class="flex flex-wrap justify-between items-end mb-6 gap-4">
                 <div>
-                    <h2 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Financial Analysis</h2>
+                    <h2 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Financial Analysis (Tax Invoice Only)</h2>
                     <div class="flex items-center gap-3">
                         <h1 class="text-3xl font-black text-slate-800">매입/매출 관리</h1>
                         <select id="yearSelect" onchange="filterList()" class="bg-slate-100 border-none rounded-lg px-3 py-1 font-bold text-slate-600 outline-none"></select>
@@ -53,7 +53,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div class="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
                     <div class="flex justify-between items-center mb-4">
-                        <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-md">상반기 (1-6월)</span>
+                        <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-md">상반기 (세금계산서 전용)</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <div><p class="text-[10px] text-slate-400 font-bold uppercase">매출</p><p id="q1-sales" class="font-bold text-blue-700 text-sm">****</p></div>
@@ -63,7 +63,7 @@
                 </div>
                 <div class="p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100">
                     <div class="flex justify-between items-center mb-4">
-                        <span class="bg-emerald-600 text-white text-[10px] font-black px-2 py-1 rounded-md">하반기 (7-12월)</span>
+                        <span class="bg-emerald-600 text-white text-[10px] font-black px-2 py-1 rounded-md">하반기 (세금계산서 전용)</span>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         <div><p class="text-[10px] text-slate-400 font-bold uppercase">매출</p><p id="q2-sales" class="font-bold text-emerald-700 text-sm">****</p></div>
@@ -74,10 +74,10 @@
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 매출</p><p id="cur-month-sales" class="text-xl font-black text-blue-600">****</p></div>
-                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 지출</p><p id="cur-month-purchase" class="text-xl font-black text-rose-500">****</p></div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 매출(계산서)</p><p id="cur-month-sales" class="text-xl font-black text-blue-600">****</p></div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 지출(계산서)</p><p id="cur-month-purchase" class="text-xl font-black text-rose-500">****</p></div>
                 <div class="p-4 bg-rose-600 rounded-2xl text-white shadow-md"><p class="text-[10px] text-rose-100 font-bold mb-1 uppercase">🚨 미납 잔액</p><p id="total-unpaid" class="text-xl font-black">****</p></div>
-                <div class="p-4 bg-slate-800 rounded-2xl text-white shadow-md"><p class="text-[10px] text-yellow-500 font-bold mb-1 uppercase">📈 연간 예상 순익</p><p id="total-profit" class="text-xl font-black text-yellow-400">****</p></div>
+                <div class="p-4 bg-slate-800 rounded-2xl text-white shadow-md"><p class="text-[10px] text-yellow-500 font-bold mb-1 uppercase">📈 연간 예상 총순익</p><p id="total-profit" class="text-xl font-black text-yellow-400">****</p></div>
             </div>
         </div>
 
@@ -198,8 +198,7 @@
         function liveCalc() {
             const noData = getRawNumber('noDataInput');
             const purchase = getRawNumber('purchasePrice');
-            const sale = getRawNumber('salePrice'); // 수리 여부와 상관없이 입력값 사용
-
+            const sale = getRawNumber('salePrice');
             const profit = sale - (noData + purchase);
             const div = document.getElementById('live-calc');
             if (sale > 0 || purchase > 0 || noData > 0) {
@@ -240,15 +239,27 @@
             allData.forEach(b => {
                 const dateParts = b.date ? b.date.split("-") : [];
                 const y = dateParts[0]; const m = parseInt(dateParts[1]) || 0;
+                
+                // 집계 조건 설정
+                const isTaxInvoice = (b.paymentMethod === "세금계산서");
+                const isRepair = (b.item || "").includes("수리");
                 const isPending = (b.paymentMethod === "미처리");
-                if(!isPending && b.date && b.date.startsWith(curYM)) {
-                    s.curMS += (b.salePrice || 0); s.curMP += (b.purchasePrice || 0); s.curMN += (b.noDataAmount || 0);
-                }
-                if(!isPending && y === targetYear) {
+
+                // 상단 통계 집계: '세금계산서'이면서 '수리'가 아닌 데이터만 합계에 포함
+                if(isTaxInvoice && !isRepair && !isPending && y === targetYear) {
                     if(m >= 1 && m <= 6) { s.q1S += (b.salePrice||0); s.q1P += (b.purchasePrice||0); s.q1N += (b.noDataAmount||0); }
                     else if(m >= 7 && m <= 12) { s.q2S += (b.salePrice||0); s.q2P += (b.purchasePrice||0); s.q2N += (b.noDataAmount||0); }
+                    
+                    if(b.date.startsWith(curYM)) {
+                        s.curMS += (b.salePrice || 0); s.curMP += (b.purchasePrice || 0); s.curMN += (b.noDataAmount || 0);
+                    }
+                }
+
+                // 순이익(totalP)은 '미처리' 제외하고 모든 데이터(수리 포함) 합계에 반영
+                if(!isPending && y === targetYear) {
                     s.totalP += (b.difference || 0);
                 }
+                
                 s.totalU += (b.unpaidAmount || 0);
             });
 
@@ -299,7 +310,7 @@
 
         async function saveData() {
             const id = document.getElementById('edit-id').value;
-            const sale = getRawNumber('salePrice'); // 조건문 제거
+            const sale = getRawNumber('salePrice');
             const d = {
                 date: document.getElementById('date').value,
                 customer: document.getElementById('customer').value,
