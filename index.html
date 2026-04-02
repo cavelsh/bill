@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Management System V15.6</title>
+    <title>Financial Management System V15.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -117,7 +117,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        <div id="data-table-container" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-6 border-b border-slate-100 flex flex-wrap gap-4 items-center justify-between">
                 <div class="flex-1 min-w-[300px] flex gap-2">
                     <div class="relative flex-1">
@@ -165,7 +165,6 @@
         let currentFilterMode = 'all'; 
         let isAuthenticated = false;
 
-        // [Utility] 콤마 추가/제거 및 숫자 변환
         function formatCurrency(input) {
             let value = input.value.replace(/[^0-9]/g, "");
             input.value = value ? Number(value).toLocaleString() : "";
@@ -191,6 +190,10 @@
                 document.getElementById('authStatus').classList.remove('hidden');
                 document.getElementById('excelBtn').disabled = false;
                 document.getElementById('excelBtn').className = "bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer shadow-md text-sm";
+                
+                // 암호 인증 성공 시 리스트 컨테이너 노출
+                document.getElementById('data-table-container').classList.remove('hidden');
+                
                 filterList();
             } else { alert("Passcode 오류"); }
         }
@@ -232,6 +235,9 @@
         function resetSearch() { document.getElementById('searchInput').value = ""; filterList(); }
 
         function renderUI(listItems, targetYear) {
+            // 암호 입력 전에는 데이터를 렌더링하지 않음
+            if (!isAuthenticated) return;
+
             let s = { q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0, totalU:0, totalP:0, curMS:0, curMP:0, curMN:0 };
             const curYM = new Date().toISOString().substring(0, 7);
             const listBody = document.getElementById('data-list');
