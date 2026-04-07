@@ -414,7 +414,7 @@ async function generatePDF(id) {
             </div>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 13px;">
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 13px;">
             <thead>
                 <tr style="background-color: #1e293b; color: white;">
                     <th style="padding: 12px; text-align: left;">품명 및 규격</th>
@@ -427,10 +427,12 @@ async function generatePDF(id) {
                 ${itemsHtml}
             </tbody>
             <tfoot>
-                <tr style="background-color: #f8fafc;">
-                    <td colspan="3" style="padding: 20px; text-align: right; font-weight: bold;">합계 금액 (VAT 별도):</td>
-                    <td style="padding: 20px; text-align: left; font-size: 18px; font-weight: 900; color: #4f46e5;">
-                        ${d.totalAmount.toLocaleString()}원
+                <tr style="background-color: #f8fafc; border-top: 2px solid #1e293b;">
+                    <td colspan="3" style="padding: 20px; text-align: right; font-weight: bold; color: #64748b;">
+                        합계 금액 (VAT 별도)
+                    </td>
+                    <td style="padding: 20px; text-align: right; font-size: 18px; font-weight: 900; color: #4f46e5; white-space: nowrap;">
+                        ${d.totalAmount.toLocaleString()} 원
                     </td>
                 </tr>
             </tfoot>
