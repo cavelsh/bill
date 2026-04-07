@@ -174,23 +174,27 @@
                         </div>
                     </div>
 
-                    <div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-100 grid grid-cols-12 gap-3 items-end">
-                        <div class="col-span-6 space-y-1">
-                            <label class="text-[10px] font-black text-indigo-500 uppercase">품명 및 사양</label>
-                            <input type="text" id="tempItem" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-sm font-bold shadow-sm">
-                        </div>
-                        <div class="col-span-2 space-y-1">
-                            <label class="text-[10px] font-black text-indigo-500 uppercase">수량</label>
-                            <input type="number" id="tempQty" value="1" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-center font-bold shadow-sm">
-                        </div>
-                        <div class="col-span-3 space-y-1">
-                            <label class="text-[10px] font-black text-indigo-500 uppercase">단가</label>
-                            <input type="text" id="tempPrice" oninput="formatCurrency(this)" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-right font-bold shadow-sm">
-                        </div>
-                        <div class="col-span-1">
-                            <button onclick="addPartRow()" class="w-full bg-indigo-600 text-white p-2.5 rounded-lg font-black hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200">＋</button>
-                        </div>
-                    </div>
+<div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-100 grid grid-cols-12 gap-3 items-end">
+    <div class="col-span-4 space-y-1">
+        <label class="text-[10px] font-black text-indigo-500 uppercase">품명 및 사양</label>
+        <input type="text" id="tempItem" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-sm font-bold shadow-sm">
+    </div>
+    <div class="col-span-4 space-y-1">
+        <label class="text-[10px] font-black text-indigo-500 uppercase">상세 설명 (선택 사항)</label>
+        <input type="text" id="tempDesc" placeholder="예: 브랜드명, 색상, 특이사항 등" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-sm shadow-sm">
+    </div>
+    <div class="col-span-1 space-y-1">
+        <label class="text-[10px] font-black text-indigo-500 uppercase">수량</label>
+        <input type="number" id="tempQty" value="1" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-center font-bold shadow-sm">
+    </div>
+    <div class="col-span-2 space-y-1">
+        <label class="text-[10px] font-black text-indigo-500 uppercase">단가</label>
+        <input type="text" id="tempPrice" oninput="formatCurrency(this)" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-right font-bold shadow-sm">
+    </div>
+    <div class="col-span-1">
+        <button onclick="addPartRow()" class="w-full bg-indigo-600 text-white p-2.5 rounded-lg font-black hover:bg-indigo-700 transition-all shadow-md">＋</button>
+    </div>
+</div>
 
                     <div class="border rounded-2xl overflow-hidden shadow-sm">
                         <table class="w-full text-sm">
@@ -276,38 +280,57 @@
         }
         function closeQuoteModal() { document.getElementById('quoteModal').classList.add('hidden'); }
 
-        function addPartRow() {
-            const item = document.getElementById('tempItem').value;
-            const qty = parseInt(document.getElementById('tempQty').value) || 0;
-            const price = getRawNumber('tempPrice');
-            if(!item) return;
-            quoteParts.push({ id: Date.now(), item, qty, price, subtotal: qty * price });
-            document.getElementById('tempItem').value = "";
-            document.getElementById('tempPrice').value = "";
-            renderQuoteParts();
-        }
+function addPartRow() {
+    const item = document.getElementById('tempItem').value;
+    const desc = document.getElementById('tempDesc').value; // 설명 추가
+    const qty = parseInt(document.getElementById('tempQty').value) || 0;
+    const price = getRawNumber('tempPrice');
+    
+    if(!item) return;
+
+    quoteParts.push({ 
+        id: Date.now(), 
+        item, 
+        desc, // 저장
+        qty, 
+        price, 
+        subtotal: qty * price 
+    });
+
+    // 입력창 초기화
+    document.getElementById('tempItem').value = "";
+    document.getElementById('tempDesc').value = "";
+    document.getElementById('tempPrice').value = "";
+    renderQuoteParts();
+}
 
         function removePartRow(id) {
             quoteParts = quoteParts.filter(p => p.id !== id);
             renderQuoteParts();
         }
 
-        function renderQuoteParts() {
-            const body = document.getElementById('quoteListBody');
-            let total = 0; body.innerHTML = "";
-            quoteParts.forEach(p => {
-                total += p.subtotal;
-                body.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3 font-bold text-slate-700">${p.item}</td>
-                        <td class="p-3 text-center font-bold text-slate-400">${p.qty}</td>
-                        <td class="p-3 text-right text-slate-600">${p.price.toLocaleString()}</td>
-                        <td class="p-3 text-right font-black text-indigo-600">${p.subtotal.toLocaleString()}</td>
-                        <td class="p-3 text-center"><button onclick="removePartRow(${p.id})" class="text-rose-400">✕</button></td>
-                    </tr>`;
-            });
-            document.getElementById('quoteGrandTotal').innerText = total.toLocaleString() + "원";
-        }
+function renderQuoteParts() {
+    const body = document.getElementById('quoteListBody');
+    let total = 0; body.innerHTML = "";
+    
+    quoteParts.forEach(p => {
+        total += p.subtotal;
+        body.innerHTML += `
+            <tr class="hover:bg-slate-50">
+                <td class="p-3">
+                    <div class="font-bold text-slate-700">${p.item}</div>
+                    ${p.desc ? `<div class="text-[11px] text-slate-400 mt-0.5">${p.desc}</div>` : ''}
+                </td>
+                <td class="p-3 text-center font-bold text-slate-400">${p.qty}</td>
+                <td class="p-3 text-right text-slate-600">${p.price.toLocaleString()}</td>
+                <td class="p-3 text-right font-black text-indigo-600">${p.subtotal.toLocaleString()}</td>
+                <td class="p-3 text-center">
+                    <button onclick="removePartRow(${p.id})" class="text-rose-400 hover:text-rose-600 transition-colors">✕</button>
+                </td>
+            </tr>`;
+    });
+    document.getElementById('quoteGrandTotal').innerText = total.toLocaleString() + "원";
+}
 
         async function saveQuotation() {
             const title = document.getElementById('quoteTitle').value;
@@ -387,13 +410,16 @@ async function generatePDF(id) {
     element.className = 'bg-white text-slate-900';
 
     const itemsHtml = d.items.map(i => `
-        <tr style="border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 12px; text-align: left;">${i.item}</td>
-            <td style="padding: 12px; text-align: center;">${i.qty}</td>
-            <td style="padding: 12px; text-align: right;">${i.price.toLocaleString()}</td>
-            <td style="padding: 12px; text-align: right; font-weight: bold;">${i.subtotal.toLocaleString()}</td>
-        </tr>
-    `).join('');
+    <tr style="border-bottom: 1px solid #e2e8f0;">
+        <td style="padding: 12px; text-align: left;">
+            <div style="font-weight: bold; font-size: 13px;">${i.item}</div>
+            ${i.desc ? `<div style="font-size: 10px; color: #64748b; margin-top: 2px;">${i.desc}</div>` : ''}
+        </td>
+        <td style="padding: 12px; text-align: center;">${i.qty}</td>
+        <td style="padding: 12px; text-align: right;">${i.price.toLocaleString()}</td>
+        <td style="padding: 12px; text-align: right; font-weight: bold; white-space: nowrap;">${i.subtotal.toLocaleString()}</td>
+    </tr>
+`).join('');
 
     element.innerHTML = `
         <div style="text-align: center; margin-bottom: 30px;">
