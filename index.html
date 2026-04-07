@@ -379,33 +379,26 @@ async function generatePDF(id) {
     const d = docRef.data();
     
     const { jsPDF } = window.jspdf;
+    // 'p' (portrait), 'mm' (unit), 'a4' (size)
     const pdf = new jsPDF('p', 'mm', 'a4');
 
-    // 1. 폰트 추가 (폰트 파일을 Base64 문자열로 준비해야 함)
-    // fontData 변수는 'NanumGothic-Regular.ttf'를 Base64로 인코딩한 긴 문자열입니다.
-    const fontData = "AAEAAAAPAIAAAwBwRkZUTV..."; // 실제 64진법 문자열 데이터
-    
-    // vfs(Virtual File System)에 등록 후 폰트 추가
-    pdf.addFileToVFS('NanumGothic.ttf', fontData);
-    pdf.addFont('NanumGothic.ttf', 'NanumGothic', 'normal');
-    pdf.setFont('NanumGothic');
-
-    // 2. 타이틀
+    // 1. Title (English)
+    pdf.setFont("helvetica", "bold");
     pdf.setFontSize(22);
-    pdf.text("견 적 서", 105, 20, { align: "center" });
+    pdf.text("QUOTATION", 105, 20, { align: "center" });
 
-    // 3. 정보 섹션
+    // 2. Info Section
+    pdf.setFont("helvetica", "normal");
     pdf.setFontSize(10);
-    pdf.text(`고객명: ${d.customer || '미지정'} 귀하`, 20, 40);
+    pdf.text(`Customer: ${d.customer || 'Guest'}`, 20, 40);
     
     const infoX = 130;
-    pdf.text(`일자: ${d.date}`, infoX, 40);
-    pdf.text("상호: 웰디자인 (Well Design)", infoX, 47);
-    pdf.text("주소: 남양주시 화도읍 마석우리 370-10", infoX, 52);
-    pdf.text("담당: 이상호", infoX, 57);
-    pdf.text("연락처: 010-9590-9782", infoX, 62);
+    pdf.text(`Date: ${d.date}`, infoX, 40);
+    pdf.text("Company: Well Design", infoX, 47);
+    pdf.text("Manager: Lee Sang-ho", infoX, 54);
+    pdf.text("Contact: +82 10-9590-9782", infoX, 61);
 
-    // 4. 품목 테이블
+    // 3. Items Table
     const tableBody = d.items.map(i => [
         i.item, 
         i.qty, 
@@ -415,28 +408,28 @@ async function generatePDF(id) {
 
     pdf.autoTable({
         startY: 70,
-        head: [['품명 및 규격', '수량', '단가', '금액']],
+        head: [['Description', 'Qty', 'Unit Price', 'Amount']],
         body: tableBody,
-        theme: 'striped',
-        styles: { font: 'NanumGothic', fontStyle: 'normal' }, // 한글 폰트 적용
-        headStyles: { fillColor: [51, 65, 85], textColor: 255, font: 'NanumGothic' },
+        theme: 'grid',
+        headStyles: { fillColor: [44, 62, 80], textColor: 255 },
         columnStyles: {
             1: { halign: 'center' },
             2: { halign: 'right' },
             3: { halign: 'right' }
-        },
-        margin: { left: 20, right: 20 }
+        }
     });
 
-    // 5. 최종 합계
+    // 4. Total Amount
     const finalY = pdf.lastAutoTable.finalY + 15;
     pdf.setFontSize(12);
-    const totalAmount = (d.totalAmount || 0).toLocaleString();
-    const totalText = `합계 금액: ${totalAmount} 원 (VAT 별도)`;
+    pdf.setFont("helvetica", "bold");
+    const totalText = `Total: ${d.totalAmount.toLocaleString()} KRW (Excl. VAT)`;
     pdf.text(totalText, 190, finalY, { align: "right" });
 
-    pdf.save(`견적서_${d.customer}_${d.date}.pdf`);
+    // 5. Save File
+    pdf.save(`Quotation_${d.customer}_${d.date}.pdf`);
 }
+
         // 기존 V16.6 UI 렌더링 및 필터링 함수 (동일 구조 유지)
         function filterList() {
             const q = document.getElementById('searchInput').value.toLowerCase();
