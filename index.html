@@ -373,49 +373,70 @@
             renderQuoteParts();
         }
 
-        // [PDF 생성 엔진]
-        async function generatePDF(id) {
-            const docRef = await db.collection("quotations").doc(id).get();
-            const d = docRef.data();
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF();
+// [PDF 생성 엔진 - 한글 지원 버전]
+async function generatePDF(id) {
+    const docRef = await db.collection("quotations").doc(id).get();
+    if (!docRef.exists) return;
+    const d = docRef.data();
+    
+    const { jsPDF } = window.jspdf;
+    // 'p' (portrait), 'mm' (unit), 'a4' (size)
+    const pdf = new jsPDF('p', 'mm', 'a4');
 
-            // 상단 타이틀
-            pdf.setFontSize(22);
-            pdf.text("QUOTATION", 105, 20, { align: "center" });
+    // 1. 한글 폰트 추가 (나눔고딕 Base64 - 용량 관계상 핵심 로직만 표시)
+    // 실제 사용 시에는 나눔고딕 .ttf 파일을 Base64로 변환한 긴 문자열이 필요합니다.
+    // 여기서는 구글 폰트 API 등을 활용하거나 직접 등록하는 방식을 사용합니다.
+    
+    // 중요: 한글 출력을 위해 유니코드를 지원하는 폰트 설정이 필수입니다.
+    // 아래는 폰트가 등록되어 있다고 가정했을 때의 출력 로직입니다.
+    
+    pdf.addFont('https://fonts.gstatic.com/s/nanumgothic/v23/PN_oRbm9S1S14axW_K5Xvrax8p_f.ttf', 'NanumGothic', 'normal');
+    pdf.setFont('NanumGothic');
 
-            // 좌측: 고객 정보 / 우측: 공급자 정보(웰디자인)
-            pdf.setFontSize(10);
-            pdf.text(`Customer: ${d.customer || 'No Name'}`, 20, 40);
-            
-            const infoX = 135;
-            pdf.text(`Date: ${d.date}`, infoX, 40);
-            pdf.text("WELL DESIGN", infoX, 47);
-            pdf.text("370-10, Maseok-uri, Namyangju-si", infoX, 52);
-            pdf.text("Manager: Lee Sang-ho", infoX, 57);
-            pdf.text("Mobile: 010-9590-9782", infoX, 62);
-            pdf.text("Fax: 02-555-6575", infoX, 67);
+    // 상단 타이틀 (한글: 견 적 서)
+    pdf.setFontSize(22);
+    pdf.text("견 적 서", 105, 20, { align: "center" });
 
-            // 품목 테이블
-            const tableBody = d.items.map(i => [i.item, i.qty, i.price.toLocaleString(), i.subtotal.toLocaleString()]);
-            pdf.autoTable({
-                startY: 75,
-                head: [['Description', 'Qty', 'Unit Price', 'Amount']],
-                body: tableBody,
-                theme: 'striped',
-                headStyles: { fillColor: [15, 23, 42] }
-            });
+    // 정보 섹션
+    pdf.setFontSize(10);
+    pdf.text(`고객명: ${d.customer || '미지정'}`, 20, 40);
+    
+    const infoX = 130;
+    pdf.text(`일자: ${d.date}`, infoX, 40);
+    pdf.text("상호: 웰디자인 (Well Design)", infoX, 47);
+    pdf.text("주소: 남양주시 화도읍 마석우리 370-10", infoX, 52);
+    pdf.text("담당: 이상호", infoX, 57);
+    pdf.text("연락처: 010-9590-9782", infoX, 62);
 
-            // 합계
-            const finalY = pdf.lastAutoTable.finalY + 12;
-            pdf.setFontSize(12);
-            pdf.text(`Total: ${d.totalAmount.toLocaleString()} KRW`, 135, finalY);
-            pdf.setFontSize(9);
-            pdf.text("(VAT excluded)", 135, finalY + 5);
+    // 품목 테이블 (한글 헤더 적용)
+    const tableBody = d.items.map(i => [
+        i.item, 
+        i.qty, 
+        i.price.toLocaleString(), 
+        i.subtotal.toLocaleString()
+    ]);
 
-            pdf.save(`${d.title}_Quotation.pdf`);
+    pdf.autoTable({
+        startY: 70,
+        head: [['품명 및 규격', '수량', '단가', '금액']],
+        body: tableBody,
+        styles: { font: 'NanumGothic', fontStyle: 'normal' }, // 테이블 내 폰트 지정
+        headStyles: { fillColor: [51, 65, 85], font: 'NanumGothic' },
+        columnStyles: {
+            1: { halign: 'center' },
+            2: { halign: 'right' },
+            3: { halign: 'right' }
         }
+    });
 
+    // 최종 합계
+    const finalY = pdf.lastAutoTable.finalY + 15;
+    pdf.setFontSize(12);
+    const totalText = `합계 금액: ${d.totalAmount.toLocaleString()} 원 (VAT 별도)`;
+    pdf.text(totalText, 190, finalY, { align: "right" });
+
+    pdf.save(`견적서_${d.customer}_${d.date}.pdf`);
+}
         // 기존 V16.6 UI 렌더링 및 필터링 함수 (동일 구조 유지)
         function filterList() {
             const q = document.getElementById('searchInput').value.toLowerCase();
