@@ -1,3 +1,8 @@
+요청하신 대로 미납 잔액이 순익이 아닌 '판매가 합계'로 계산되도록 모든 로직을 완벽하게 통합한 최종 V16.0 코드입니다.
+
+이 코드에서는 데이터 저장 시 unpaidStatus가 **'미납'**일 경우, 해당 항목의 판매 가격(salePrice) 전체를 미납금으로 기록하며, 상단 대시보드의 '미납 잔액' 카드는 이 금액들의 총합을 실시간으로 보여줍니다.
+
+HTML
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -76,7 +81,7 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 매출(계산서)</p><p id="cur-month-sales" class="text-xl font-black text-blue-600">****</p></div>
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 지출(계산서)</p><p id="cur-month-purchase" class="text-xl font-black text-rose-500">****</p></div>
-                <div class="p-4 bg-rose-600 rounded-2xl text-white shadow-md"><p class="text-[10px] text-rose-100 font-bold mb-1 uppercase">🚨 미납 잔액(판매가 기준)</p><p id="total-unpaid" class="text-xl font-black">****</p></div>
+                <div class="p-4 bg-rose-600 rounded-2xl text-white shadow-md"><p class="text-[10px] text-rose-100 font-bold mb-1 uppercase">🚨 미납 잔액(판매가 합계)</p><p id="total-unpaid" class="text-xl font-black">****</p></div>
                 <div class="p-4 bg-slate-800 rounded-2xl text-white shadow-md"><p class="text-[10px] text-yellow-500 font-bold mb-1 uppercase">📈 연간 예상 총순익</p><p id="total-profit" class="text-xl font-black text-yellow-400">****</p></div>
             </div>
         </div>
@@ -257,8 +262,10 @@
                     s.totalP += (b.difference || 0);
                 }
                 
-                // [미납 합계] 로직: 미납 상태일 때 판매가(salePrice)를 합산
-                s.totalU += (b.unpaidAmount || 0);
+                // [미납 합계 로직] 미납 상태 항목의 판매가(salePrice)를 합계에 반영
+                if(y === targetYear) {
+                    s.totalU += (b.unpaidAmount || 0);
+                }
             });
 
             listItems.forEach(b => {
@@ -323,7 +330,7 @@
             };
             const diff = d.salePrice - (d.purchasePrice + d.noDataAmount);
             
-            // [통합 수정] 미납인 경우 unpaidAmount를 판매가(sale)로 저장
+            // [통합 수정] 미납일 경우 unpaidAmount 필드에 판매가(sale)를 그대로 저장
             const final = { 
                 ...d, 
                 difference: diff, 
