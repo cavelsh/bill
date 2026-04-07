@@ -373,33 +373,30 @@
             renderQuoteParts();
         }
 
-// [PDF 생성 엔진 - 한글 지원 버전]
 async function generatePDF(id) {
     const docRef = await db.collection("quotations").doc(id).get();
     if (!docRef.exists) return;
     const d = docRef.data();
     
     const { jsPDF } = window.jspdf;
-    // 'p' (portrait), 'mm' (unit), 'a4' (size)
     const pdf = new jsPDF('p', 'mm', 'a4');
 
-    // 1. 한글 폰트 추가 (나눔고딕 Base64 - 용량 관계상 핵심 로직만 표시)
-    // 실제 사용 시에는 나눔고딕 .ttf 파일을 Base64로 변환한 긴 문자열이 필요합니다.
-    // 여기서는 구글 폰트 API 등을 활용하거나 직접 등록하는 방식을 사용합니다.
+    // 1. 폰트 추가 (폰트 파일을 Base64 문자열로 준비해야 함)
+    // fontData 변수는 'NanumGothic-Regular.ttf'를 Base64로 인코딩한 긴 문자열입니다.
+    const fontData = "AAEAAAAPAIAAAwBwRkZUTV..."; // 실제 64진법 문자열 데이터
     
-    // 중요: 한글 출력을 위해 유니코드를 지원하는 폰트 설정이 필수입니다.
-    // 아래는 폰트가 등록되어 있다고 가정했을 때의 출력 로직입니다.
-    
-    pdf.addFont('https://fonts.gstatic.com/s/nanumgothic/v23/PN_oRbm9S1S14axW_K5Xvrax8p_f.ttf', 'NanumGothic', 'normal');
+    // vfs(Virtual File System)에 등록 후 폰트 추가
+    pdf.addFileToVFS('NanumGothic.ttf', fontData);
+    pdf.addFont('NanumGothic.ttf', 'NanumGothic', 'normal');
     pdf.setFont('NanumGothic');
 
-    // 상단 타이틀 (한글: 견 적 서)
+    // 2. 타이틀
     pdf.setFontSize(22);
     pdf.text("견 적 서", 105, 20, { align: "center" });
 
-    // 정보 섹션
+    // 3. 정보 섹션
     pdf.setFontSize(10);
-    pdf.text(`고객명: ${d.customer || '미지정'}`, 20, 40);
+    pdf.text(`고객명: ${d.customer || '미지정'} 귀하`, 20, 40);
     
     const infoX = 130;
     pdf.text(`일자: ${d.date}`, infoX, 40);
@@ -408,7 +405,7 @@ async function generatePDF(id) {
     pdf.text("담당: 이상호", infoX, 57);
     pdf.text("연락처: 010-9590-9782", infoX, 62);
 
-    // 품목 테이블 (한글 헤더 적용)
+    // 4. 품목 테이블
     const tableBody = d.items.map(i => [
         i.item, 
         i.qty, 
@@ -420,19 +417,22 @@ async function generatePDF(id) {
         startY: 70,
         head: [['품명 및 규격', '수량', '단가', '금액']],
         body: tableBody,
-        styles: { font: 'NanumGothic', fontStyle: 'normal' }, // 테이블 내 폰트 지정
-        headStyles: { fillColor: [51, 65, 85], font: 'NanumGothic' },
+        theme: 'striped',
+        styles: { font: 'NanumGothic', fontStyle: 'normal' }, // 한글 폰트 적용
+        headStyles: { fillColor: [51, 65, 85], textColor: 255, font: 'NanumGothic' },
         columnStyles: {
             1: { halign: 'center' },
             2: { halign: 'right' },
             3: { halign: 'right' }
-        }
+        },
+        margin: { left: 20, right: 20 }
     });
 
-    // 최종 합계
+    // 5. 최종 합계
     const finalY = pdf.lastAutoTable.finalY + 15;
     pdf.setFontSize(12);
-    const totalText = `합계 금액: ${d.totalAmount.toLocaleString()} 원 (VAT 별도)`;
+    const totalAmount = (d.totalAmount || 0).toLocaleString();
+    const totalText = `합계 금액: ${totalAmount} 원 (VAT 별도)`;
     pdf.text(totalText, 190, finalY, { align: "right" });
 
     pdf.save(`견적서_${d.customer}_${d.date}.pdf`);
