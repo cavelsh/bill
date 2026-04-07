@@ -280,18 +280,40 @@
         }
         function closeQuoteModal() { document.getElementById('quoteModal').classList.add('hidden'); }
 
+// [항목 수정 함수] - 테이블의 수정 버튼 클릭 시 실행
+function editPartRow(id) {
+    const part = quoteParts.find(p => p.id === id);
+    if (!part) return;
+
+    // 1. 테이블에서 해당 항목 일단 제거 (수정 후 다시 추가하기 위함)
+    quoteParts = quoteParts.filter(p => p.id !== id);
+
+    // 2. 입력창에 기존 데이터 채워넣기
+    document.getElementById('tempItem').value = part.item;
+    document.getElementById('tempDesc').value = part.desc || "";
+    document.getElementById('tempQty').value = part.qty;
+    document.getElementById('tempPrice').value = part.price.toLocaleString();
+
+    // 3. UI 갱신
+    renderQuoteParts();
+    
+    // 4. 입력창으로 포커스 이동 (사용자 편의)
+    document.getElementById('tempItem').focus();
+}
+
+// [항목 추가 함수] - 기존과 동일하지만 초기화 로직 확인
 function addPartRow() {
     const item = document.getElementById('tempItem').value;
-    const desc = document.getElementById('tempDesc').value; // 설명 추가
+    const desc = document.getElementById('tempDesc').value;
     const qty = parseInt(document.getElementById('tempQty').value) || 0;
     const price = getRawNumber('tempPrice');
     
-    if(!item) return;
+    if(!item) { alert("품명을 입력해주세요."); return; }
 
     quoteParts.push({ 
         id: Date.now(), 
         item, 
-        desc, // 저장
+        desc, 
         qty, 
         price, 
         subtotal: qty * price 
@@ -300,10 +322,11 @@ function addPartRow() {
     // 입력창 초기화
     document.getElementById('tempItem').value = "";
     document.getElementById('tempDesc').value = "";
+    document.getElementById('tempQty').value = "1";
     document.getElementById('tempPrice').value = "";
+    
     renderQuoteParts();
 }
-
         function removePartRow(id) {
             quoteParts = quoteParts.filter(p => p.id !== id);
             renderQuoteParts();
@@ -311,21 +334,25 @@ function addPartRow() {
 
 function renderQuoteParts() {
     const body = document.getElementById('quoteListBody');
-    let total = 0; body.innerHTML = "";
+    let total = 0; 
+    body.innerHTML = "";
     
     quoteParts.forEach(p => {
         total += p.subtotal;
         body.innerHTML += `
-            <tr class="hover:bg-slate-50">
+            <tr class="hover:bg-slate-50 transition-colors">
                 <td class="p-3">
                     <div class="font-bold text-slate-700">${p.item}</div>
                     ${p.desc ? `<div class="text-[11px] text-slate-400 mt-0.5">${p.desc}</div>` : ''}
                 </td>
-                <td class="p-3 text-center font-bold text-slate-400">${p.qty}</td>
+                <td class="p-3 text-center font-bold text-slate-500">${p.qty}</td>
                 <td class="p-3 text-right text-slate-600">${p.price.toLocaleString()}</td>
                 <td class="p-3 text-right font-black text-indigo-600">${p.subtotal.toLocaleString()}</td>
                 <td class="p-3 text-center">
-                    <button onclick="removePartRow(${p.id})" class="text-rose-400 hover:text-rose-600 transition-colors">✕</button>
+                    <div class="flex justify-center gap-2">
+                        <button onclick="editPartRow(${p.id})" class="text-blue-500 hover:text-blue-700 text-xs font-bold">수정</button>
+                        <button onclick="removePartRow(${p.id})" class="text-rose-400 hover:text-rose-600 text-xs font-bold">삭제</button>
+                    </div>
                 </td>
             </tr>`;
     });
@@ -411,13 +438,13 @@ async function generatePDF(id) {
 
     const itemsHtml = d.items.map(i => `
     <tr style="border-bottom: 1px solid #e2e8f0;">
-        <td style="padding: 12px; text-align: left;">
-            <div style="font-weight: bold; font-size: 13px;">${i.item}</div>
-            ${i.desc ? `<div style="font-size: 10px; color: #64748b; margin-top: 2px;">${i.desc}</div>` : ''}
+        <td style="padding: 10px 12px; text-align: left; vertical-align: top;">
+            <div style="font-weight: bold; font-size: 13px; color: #1e293b;">${i.item}</div>
+            ${i.desc ? `<div style="font-size: 10px; color: #64748b; margin-top: 3px; line-height: 1.4;">${i.desc}</div>` : ''}
         </td>
-        <td style="padding: 12px; text-align: center;">${i.qty}</td>
-        <td style="padding: 12px; text-align: right;">${i.price.toLocaleString()}</td>
-        <td style="padding: 12px; text-align: right; font-weight: bold; white-space: nowrap;">${i.subtotal.toLocaleString()}</td>
+        <td style="padding: 10px 12px; text-align: center; vertical-align: top;">${i.qty}</td>
+        <td style="padding: 10px 12px; text-align: right; vertical-align: top;">${i.price.toLocaleString()}</td>
+        <td style="padding: 10px 12px; text-align: right; vertical-align: top; font-weight: bold; white-space: nowrap;">${i.subtotal.toLocaleString()}</td>
     </tr>
 `).join('');
 
