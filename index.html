@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Management System V15.9</title>
+    <title>Financial Management System V16.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -76,7 +76,7 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 매출(계산서)</p><p id="cur-month-sales" class="text-xl font-black text-blue-600">****</p></div>
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 지출(계산서)</p><p id="cur-month-purchase" class="text-xl font-black text-rose-500">****</p></div>
-                <div class="p-4 bg-rose-600 rounded-2xl text-white shadow-md"><p class="text-[10px] text-rose-100 font-bold mb-1 uppercase">🚨 미납 잔액</p><p id="total-unpaid" class="text-xl font-black">****</p></div>
+                <div class="p-4 bg-rose-600 rounded-2xl text-white shadow-md"><p class="text-[10px] text-rose-100 font-bold mb-1 uppercase">🚨 미납 잔액(판매가 기준)</p><p id="total-unpaid" class="text-xl font-black">****</p></div>
                 <div class="p-4 bg-slate-800 rounded-2xl text-white shadow-md"><p class="text-[10px] text-yellow-500 font-bold mb-1 uppercase">📈 연간 예상 총순익</p><p id="total-profit" class="text-xl font-black text-yellow-400">****</p></div>
             </div>
         </div>
@@ -240,12 +240,10 @@
                 const dateParts = b.date ? b.date.split("-") : [];
                 const y = dateParts[0]; const m = parseInt(dateParts[1]) || 0;
                 
-                // 집계 조건 설정
                 const isTaxInvoice = (b.paymentMethod === "세금계산서");
                 const isRepair = (b.item || "").includes("수리");
                 const isPending = (b.paymentMethod === "미처리");
 
-                // 상단 통계 집계: '세금계산서'이면서 '수리'가 아닌 데이터만 합계에 포함
                 if(isTaxInvoice && !isRepair && !isPending && y === targetYear) {
                     if(m >= 1 && m <= 6) { s.q1S += (b.salePrice||0); s.q1P += (b.purchasePrice||0); s.q1N += (b.noDataAmount||0); }
                     else if(m >= 7 && m <= 12) { s.q2S += (b.salePrice||0); s.q2P += (b.purchasePrice||0); s.q2N += (b.noDataAmount||0); }
@@ -255,11 +253,11 @@
                     }
                 }
 
-                // 순이익(totalP)은 '미처리' 제외하고 모든 데이터(수리 포함) 합계에 반영
                 if(!isPending && y === targetYear) {
                     s.totalP += (b.difference || 0);
                 }
                 
+                // [미납 합계] 로직: 미납 상태일 때 판매가(salePrice)를 합산
                 s.totalU += (b.unpaidAmount || 0);
             });
 
@@ -324,7 +322,14 @@
                 memo: ""
             };
             const diff = d.salePrice - (d.purchasePrice + d.noDataAmount);
-            const final = { ...d, difference: diff, unpaidAmount: d.unpaidStatus === "미납" ? diff : 0 };
+            
+            // [통합 수정] 미납인 경우 unpaidAmount를 판매가(sale)로 저장
+            const final = { 
+                ...d, 
+                difference: diff, 
+                unpaidAmount: d.unpaidStatus === "미납" ? sale : 0 
+            };
+
             if (id) await db.collection("bills").doc(id).update(final);
             else await db.collection("bills").add(final);
             resetForm();
