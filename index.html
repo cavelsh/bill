@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Management System V16.1 - Profit Restored</title>
+    <title>Financial Management System V16.5 - Secure Hash</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -119,8 +119,8 @@
                         <input type="text" id="searchInput" placeholder="고객명 혹은 품목 검색..." class="w-full bg-white border-2 border-slate-200 p-3 pl-10 rounded-xl text-sm outline-none focus:border-blue-500" onkeyup="if(window.event.keyCode==13){filterList()}">
                         <span class="absolute left-3 top-3.5 opacity-30 text-sm">🔍</span>
                     </div>
-                    <button onclick="filterList()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md transition-all">확인</button>
-                    <button onclick="resetSearch()" class="px-5 py-2 bg-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-300 transition-all">취소</button>
+                    <button onclick="filterList()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md">확인</button>
+                    <button onclick="resetSearch()" class="px-5 py-2 bg-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-300">취소</button>
                 </div>
                 <div class="flex gap-2 flex-wrap">
                     <button onclick="toggleFilter('unpaid')" id="btn-unpaid" class="px-4 py-2 rounded-xl text-xs font-black border-2 border-rose-100 text-rose-500 hover:bg-rose-50">🚨 미납 보기</button>
@@ -156,10 +156,35 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // SHA-256 해시값 
+        const SECURE_HASH = "6469611689258287d3e698305c065f492a40660a1d48f7602e3b2e5971415286"; 
+
         let allData = [];
         let currentFilter = 'none'; 
         let currentFilterMode = 'all'; 
         let isAuthenticated = false;
+
+        async function toggleAuth() {
+            const inputPw = document.getElementById('mainPwInput').value;
+            
+            // 입력값을 SHA-256으로 변환하여 비교
+            const msgUint8 = new TextEncoder().encode(inputPw);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            if (hashHex === SECURE_HASH) {
+                isAuthenticated = true;
+                document.getElementById('authGroup').classList.add('hidden');
+                document.getElementById('authStatus').classList.remove('hidden');
+                document.getElementById('excelBtn').disabled = false;
+                document.getElementById('excelBtn').className = "bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer text-sm shadow-md";
+                document.getElementById('data-table-container').classList.remove('hidden');
+                filterList();
+            } else { 
+                alert("Passcode 오류"); 
+            }
+        }
 
         function formatCurrency(input) {
             let value = input.value.replace(/[^0-9]/g, "");
@@ -178,18 +203,6 @@
                 if(i === curY) opt.selected = true; ys.appendChild(opt);
             }
         };
-
-        function toggleAuth() {
-            if (document.getElementById('mainPwInput').value === "0927") {
-                isAuthenticated = true;
-                document.getElementById('authGroup').classList.add('hidden');
-                document.getElementById('authStatus').classList.remove('hidden');
-                document.getElementById('excelBtn').disabled = false;
-                document.getElementById('excelBtn').className = "bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold cursor-pointer text-sm shadow-md";
-                document.getElementById('data-table-container').classList.remove('hidden');
-                filterList();
-            } else { alert("Passcode 오류"); }
-        }
 
         function liveCalc() {
             const noData = getRawNumber('noDataInput');
@@ -226,7 +239,6 @@
         function renderUI(listItems, targetYear) {
             if (!isAuthenticated) return;
 
-            // 통계용 변수 (curMPF = current Month Profit)
             let s = { q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0, curMS:0, curMP:0, curMN:0, curMPF:0, totalU:0, totalP:0 };
             const curYM = new Date().toISOString().substring(0, 7);
             const listBody = document.getElementById('data-list');
@@ -240,19 +252,12 @@
                 const isPending = (b.paymentMethod === "미처리");
 
                 if(y === targetYear) {
-                    // 분기 통계 및 이번달 계산서 통계
                     if(isTaxInvoice && !isRepair && !isPending) {
                         if(m >= 1 && m <= 6) { s.q1S += (b.salePrice||0); s.q1P += (b.purchasePrice||0); s.q1N += (b.noDataAmount||0); }
                         else if(m >= 7 && m <= 12) { s.q2S += (b.salePrice||0); s.q2P += (b.purchasePrice||0); s.q2N += (b.noDataAmount||0); }
                         if(b.date.startsWith(curYM)) { s.curMS += (b.salePrice || 0); s.curMP += (b.purchasePrice || 0); s.curMN += (b.noDataAmount || 0); }
                     }
-                    
-                    // [복원] 이번 달 전체 순이익 합계 (계산서 외 카드/현금 등 포함)
-                    if(b.date.startsWith(curYM) && !isPending) {
-                        s.curMPF += (b.difference || 0);
-                    }
-
-                    // 연간 총순익 및 미납 합계
+                    if(b.date.startsWith(curYM) && !isPending) { s.curMPF += (b.difference || 0); }
                     if(!isPending) s.totalP += (b.difference || 0);
                     if(b.unpaidStatus === "미납") s.totalU += (b.salePrice || 0);
                 }
@@ -280,8 +285,8 @@
                         <td class="p-4 text-right font-black ${isUnpaid ? 'text-rose-600' : 'text-slate-900'}">${fmt(b.salePrice)}</td>
                         <td class="p-4 text-right font-black text-blue-600 bg-white/30">${fmt(b.difference)}</td>
                         <td class="p-4 text-center space-x-1">
-                            <button onclick="editDoc('${b.id}')" class="text-[10px] font-bold border px-2 py-1.5 rounded-lg bg-white">수정</button>
-                            <button onclick="deleteDoc('${b.id}')" class="text-[10px] font-bold border border-rose-100 text-rose-500 px-2 py-1.5 rounded-lg bg-white">삭제</button>
+                            <button onclick="editDoc('${b.id}')" class="text-[10px] font-bold border px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50">수정</button>
+                            <button onclick="deleteDoc('${b.id}')" class="text-[10px] font-bold border border-rose-100 text-rose-500 px-2 py-1.5 rounded-lg bg-white hover:bg-rose-50">삭제</button>
                         </td>
                     </tr>`;
             });
@@ -293,10 +298,9 @@
             document.getElementById('q2-sales').innerText = msk(s.q2S);
             document.getElementById('q2-purchase').innerText = msk(s.q2P);
             document.getElementById('q2-nodata').innerText = msk(s.q2N);
-            
             document.getElementById('cur-month-sales').innerText = msk(s.curMS);
             document.getElementById('cur-month-purchase').innerText = msk(s.curMP + s.curMN);
-            document.getElementById('cur-month-profit').innerText = msk(s.curMPF); // 복원된 수치
+            document.getElementById('cur-month-profit').innerText = msk(s.curMPF);
             document.getElementById('total-unpaid').innerText = msk(s.totalU);
             document.getElementById('total-profit').innerText = msk(s.totalP);
         }
@@ -348,7 +352,6 @@
 
         async function deleteDoc(id) { if(confirm("삭제하시겠습니까?")) await db.collection("bills").doc(id).delete(); }
         function downloadExcel() { if(isAuthenticated) { const wb = XLSX.utils.table_to_book(document.getElementById("main-table")); XLSX.writeFile(wb, "Account_Record.xlsx"); } }
-        
         function resetSearch() { document.getElementById('searchInput').value = ""; filterList(); }
         function toggleFilter(f) { currentFilter = (currentFilter === f) ? 'none' : f; filterList(); }
         function setFilterMode(m) { currentFilterMode = (currentFilterMode === m) ? 'all' : m; filterList(); }
