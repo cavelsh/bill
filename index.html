@@ -1,9 +1,14 @@
+네, 요청하신 대로 상단 대시보드에 '이번 달 순이익' 항목을 다시 추가하고, 모든 필터와 미납 잔액(판매가 합계) 로직을 완벽하게 결합했습니다.
+
+이제 상단에서 이번 달 매출, 지출과 더불어 실제 남은 순이익을 한눈에 확인하실 수 있습니다.
+
+HTML
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Management System V16.0 - Full Features</title>
+    <title>Financial Management System V16.1 - Profit Restored</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -41,7 +46,7 @@
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
             <div class="flex flex-wrap justify-between items-end mb-6 gap-4">
                 <div>
-                    <h2 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Financial Analysis (Tax Invoice Only)</h2>
+                    <h2 class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Financial Analysis (Monthly & Quarterly)</h2>
                     <div class="flex items-center gap-3">
                         <h1 class="text-3xl font-black text-slate-800">매입/매출 관리</h1>
                         <select id="yearSelect" onchange="filterList()" class="bg-slate-100 border-none rounded-lg px-3 py-1 font-bold text-slate-600 outline-none"></select>
@@ -69,11 +74,12 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 매출(계산서)</p><p id="cur-month-sales" class="text-xl font-black text-blue-600">****</p></div>
-                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이번 달 지출(계산서)</p><p id="cur-month-purchase" class="text-xl font-black text-rose-500">****</p></div>
-                <div class="p-4 bg-rose-600 rounded-2xl text-white shadow-md"><p class="text-[10px] text-rose-100 font-bold mb-1 uppercase">🚨 미납 잔액(판매가 합계)</p><p id="total-unpaid" class="text-xl font-black">****</p></div>
-                <div class="p-4 bg-slate-800 rounded-2xl text-white shadow-md"><p class="text-[10px] text-yellow-500 font-bold mb-1 uppercase">📈 연간 예상 총순익</p><p id="total-profit" class="text-xl font-black text-yellow-400">****</p></div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이달 매출(계산서)</p><p id="cur-month-sales" class="text-lg font-black text-blue-600">****</p></div>
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100"><p class="text-[10px] text-slate-400 font-bold mb-1 uppercase">이달 지출(계산서)</p><p id="cur-month-purchase" class="text-lg font-black text-rose-500">****</p></div>
+                <div class="p-4 bg-blue-600 rounded-2xl text-white shadow-md"><p class="text-[10px] text-blue-100 font-bold mb-1 uppercase">💰 이달 순이익</p><p id="cur-month-profit" class="text-lg font-black">****</p></div>
+                <div class="p-4 bg-rose-600 rounded-2xl text-white shadow-md"><p class="text-[10px] text-rose-100 font-bold mb-1 uppercase">🚨 미납 잔액(판매가)</p><p id="total-unpaid" class="text-lg font-black">****</p></div>
+                <div class="p-4 bg-slate-800 rounded-2xl text-white shadow-md"><p class="text-[10px] text-yellow-500 font-bold mb-1 uppercase">📈 연간 총순익</p><p id="total-profit" class="text-lg font-black text-yellow-400">****</p></div>
             </div>
         </div>
 
@@ -225,7 +231,8 @@
         function renderUI(listItems, targetYear) {
             if (!isAuthenticated) return;
 
-            let s = { q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0, curMS:0, curMP:0, curMN:0, totalU:0, totalP:0 };
+            // 통계용 변수 (curMPF = current Month Profit)
+            let s = { q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0, curMS:0, curMP:0, curMN:0, curMPF:0, totalU:0, totalP:0 };
             const curYM = new Date().toISOString().substring(0, 7);
             const listBody = document.getElementById('data-list');
             listBody.innerHTML = "";
@@ -238,11 +245,19 @@
                 const isPending = (b.paymentMethod === "미처리");
 
                 if(y === targetYear) {
+                    // 분기 통계 및 이번달 계산서 통계
                     if(isTaxInvoice && !isRepair && !isPending) {
                         if(m >= 1 && m <= 6) { s.q1S += (b.salePrice||0); s.q1P += (b.purchasePrice||0); s.q1N += (b.noDataAmount||0); }
                         else if(m >= 7 && m <= 12) { s.q2S += (b.salePrice||0); s.q2P += (b.purchasePrice||0); s.q2N += (b.noDataAmount||0); }
                         if(b.date.startsWith(curYM)) { s.curMS += (b.salePrice || 0); s.curMP += (b.purchasePrice || 0); s.curMN += (b.noDataAmount || 0); }
                     }
+                    
+                    // [복원] 이번 달 전체 순이익 합계 (계산서 외 카드/현금 등 포함)
+                    if(b.date.startsWith(curYM) && !isPending) {
+                        s.curMPF += (b.difference || 0);
+                    }
+
+                    // 연간 총순익 및 미납 합계
                     if(!isPending) s.totalP += (b.difference || 0);
                     if(b.unpaidStatus === "미납") s.totalU += (b.salePrice || 0);
                 }
@@ -255,7 +270,7 @@
                 let rowStyle = isUnpaid ? "bg-rose-50 border-l-4 border-rose-500" : (isPending ? "bg-amber-50 border-l-4 border-amber-400" : "hover:bg-slate-50");
 
                 listBody.innerHTML += `
-                    <tr class="border-b ${rowStyle} whitespace-nowrap">
+                    <tr class="border-b ${rowStyle} whitespace-nowrap transition-all">
                         <td class="p-4 text-[11px] font-bold text-slate-400">${b.date}</td>
                         <td class="p-4">
                             <div class="flex items-center gap-2 mb-0.5">
@@ -283,8 +298,10 @@
             document.getElementById('q2-sales').innerText = msk(s.q2S);
             document.getElementById('q2-purchase').innerText = msk(s.q2P);
             document.getElementById('q2-nodata').innerText = msk(s.q2N);
+            
             document.getElementById('cur-month-sales').innerText = msk(s.curMS);
             document.getElementById('cur-month-purchase').innerText = msk(s.curMP + s.curMN);
+            document.getElementById('cur-month-profit').innerText = msk(s.curMPF); // 복원된 수치
             document.getElementById('total-unpaid').innerText = msk(s.totalU);
             document.getElementById('total-profit').innerText = msk(s.totalP);
         }
@@ -335,9 +352,8 @@
         }
 
         async function deleteDoc(id) { if(confirm("삭제하시겠습니까?")) await db.collection("bills").doc(id).delete(); }
-        function downloadExcel() { if(isAuthenticated) { const wb = XLSX.utils.table_to_book(document.getElementById("main-table")); XLSX.writeFile(wb, "Record.xlsx"); } }
+        function downloadExcel() { if(isAuthenticated) { const wb = XLSX.utils.table_to_book(document.getElementById("main-table")); XLSX.writeFile(wb, "Account_Record.xlsx"); } }
         
-        // 검색 및 필터 복원 로직
         function resetSearch() { document.getElementById('searchInput').value = ""; filterList(); }
         function toggleFilter(f) { currentFilter = (currentFilter === f) ? 'none' : f; filterList(); }
         function setFilterMode(m) { currentFilterMode = (currentFilterMode === m) ? 'all' : m; filterList(); }
