@@ -178,10 +178,13 @@
 </div>
 
 <div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-100 grid grid-cols-12 gap-3 items-end">
-    <div class="col-span-4 space-y-1">
-        <label class="text-[10px] font-black text-indigo-500 uppercase">품명 및 사양</label>
-        <input type="text" id="tempItem" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-sm font-bold shadow-sm">
-    </div>
+   <div class="col-span-4 space-y-1">
+    <label class="text-[10px] font-black text-indigo-500 uppercase">품명 및 사양</label>
+    <textarea id="tempItem" rows="2" 
+        class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-sm font-bold shadow-sm resize-none focus:h-24 transition-all" 
+        placeholder="품명을 입력하세요."></textarea>
+</div>
+
 <div class="col-span-4 space-y-1">
     <label class="text-[10px] font-black text-indigo-500 uppercase">상세 설명 (엔터로 줄바꿈 가능)</label>
     <textarea id="tempDesc" rows="5" 
@@ -190,7 +193,7 @@
 </div>
 
     <div class="col-span-1 space-y-1">
-        <label class="text-[12px] font-black text-indigo-500 uppercase">수량</label>
+        <label class="text-[14px] font-black text-indigo-500 uppercase">수량</label>
         <input type="number" id="tempQty" value="1" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-center font-bold shadow-sm">
     </div>
     <div class="col-span-2 space-y-1">
@@ -361,9 +364,10 @@ function renderQuoteParts() {
         body.innerHTML += `
             <tr class="hover:bg-slate-50 transition-colors">
                 <td class="p-3">
-                    <div class="font-bold text-slate-700">${p.item}</div>
-                    ${p.desc ? `<div class="text-[10px] text-slate-400 mt-1 leading-relaxed" style="white-space: pre-line;">${p.desc}</div>` : ''}
-                </td>
+    <div class="font-bold text-slate-700" style="white-space: pre-line;">${p.item}</div>
+    ${p.desc ? `<div class="text-[10px] text-slate-400 mt-1 leading-relaxed" style="white-space: pre-line;">${p.desc}</div>` : ''}
+</td>
+
                 <td class="p-3 text-center font-bold text-slate-500">${p.qty}</td>
                 <td class="p-3 text-right text-slate-600">${p.price.toLocaleString()}</td>
                 <td class="p-3 text-right font-black text-indigo-600 whitespace-nowrap">${p.subtotal.toLocaleString()}</td>
@@ -474,10 +478,11 @@ async function generatePDF(id) {
 
     const itemsHtml = d.items.map(i => `
         <tr style="border-bottom: 1px solid #e2e8f0;">
-            <td style="padding: 10px 12px; text-align: left; vertical-align: top;">
-                <div style="font-weight: bold; font-size: 13px; color: #1e293b;">${i.item}</div>
-                ${i.desc ? `<div style="font-size: 10px; color: #64748b; margin-top: 4px; line-height: 1.4; white-space: pre-line;">${i.desc}</div>` : ''}
-            </td>
+          <td style="padding: 10px 12px; text-align: left; vertical-align: top;">
+    <div style="font-weight: bold; font-size: 13px; color: #1e293b; white-space: pre-line;">${i.item}</div>
+    ${i.desc ? `<div style="font-size: 9px; color: #64748b; margin-top: 4px; line-height: 1.4; white-space: pre-line;">${i.desc}</div>` : ''}
+</td>
+
             <td style="padding: 10px 12px; text-align: center; vertical-align: top;">${i.qty}</td>
             <td style="padding: 10px 12px; text-align: right; vertical-align: top;">${i.price.toLocaleString()}</td>
             <td style="padding: 10px 12px; text-align: right; vertical-align: top; font-weight: bold; white-space: nowrap;">
