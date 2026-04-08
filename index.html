@@ -163,16 +163,19 @@
                 </div>
 
                 <div class="w-full md:w-2/3 p-6 overflow-y-auto custom-scroll space-y-6">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-black text-slate-400 uppercase">견적 명칭 (자료 관리용)</label>
-                            <input type="text" id="quoteTitle" placeholder="예: 3월 거실 인테리어" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none focus:border-indigo-500 font-bold">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-black text-slate-400 uppercase">고객/업체명</label>
-                            <input type="text" id="quoteCustomer" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none">
-                        </div>
-                    </div>
+<div class="grid grid-cols-3 gap-4"> <div class="space-y-1">
+        <label class="text-[10px] font-black text-slate-400 uppercase">견적 명칭 (관리용)</label>
+        <input type="text" id="quoteTitle" placeholder="예: 컴퓨터 14세대 i7 본체" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none focus:border-indigo-500 font-bold">
+    </div>
+    <div class="space-y-1">
+        <label class="text-[10px] font-black text-slate-400 uppercase">견적 일자</label>
+        <input type="date" id="quoteDate" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none focus:border-indigo-500">
+    </div>
+    <div class="space-y-1">
+        <label class="text-[10px] font-black text-slate-400 uppercase">고객/업체명</label>
+        <input type="text" id="quoteCustomer" class="w-full border-2 border-slate-100 p-3 rounded-xl outline-none focus:border-indigo-500">
+    </div>
+</div>
 
 <div class="bg-indigo-50 p-5 rounded-2xl border border-indigo-100 grid grid-cols-12 gap-3 items-end">
     <div class="col-span-4 space-y-1">
@@ -285,10 +288,13 @@
         // ----------------------------------------------------
         // 견적서 핵심 로직
         // ----------------------------------------------------
-        function openQuoteModal() { 
-            document.getElementById('quoteModal').classList.remove('hidden'); 
-            loadQuotations(); 
-        }
+// [모달 열 때 오늘 날짜 기본값 설정]
+function openQuoteModal() { 
+    document.getElementById('quoteModal').classList.remove('hidden');
+    document.getElementById('quoteDate').value = new Date().toISOString().substring(0, 10); // 오늘 날짜 기본값
+    loadQuotations(); 
+}
+
         function closeQuoteModal() { document.getElementById('quoteModal').classList.add('hidden'); }
 
 // [항목 수정 함수] - 테이블의 수정 버튼 클릭 시 실행
@@ -371,18 +377,20 @@ function renderQuoteParts() {
     document.getElementById('quoteGrandTotal').innerText = total.toLocaleString() + "원";
 }
 
+// [견적서 저장] - 선택한 날짜 포함
 async function saveQuotation() {
     const title = document.getElementById('quoteTitle').value;
+    const selectedDate = document.getElementById('quoteDate').value; // 날짜 가져오기
     if(!title || quoteParts.length === 0) { alert("견적 명칭과 품목을 입력하세요."); return; }
 
     const data = {
         title,
         customer: document.getElementById('quoteCustomer').value,
-        date: new Date().toISOString().substring(0, 10),
+        date: selectedDate || new Date().toISOString().substring(0, 10), // 날짜 저장
         items: quoteParts,
         totalAmount: quoteParts.reduce((sum, p) => sum + p.subtotal, 0),
-        showTotal: document.getElementById('showTotalCheck').checked, // 저장 추가
-        memo: document.getElementById('quoteMemo').value,           // 저장 추가
+        showTotal: document.getElementById('showTotalCheck').checked,
+        memo: document.getElementById('quoteMemo').value,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -394,6 +402,7 @@ async function saveQuotation() {
         resetQuoteForm();
     } catch(e) { alert("저장 실패"); }
 }
+
         async function loadQuotations() {
             const snap = await db.collection("quotations").orderBy("updatedAt", "desc").limit(15).get();
             const container = document.getElementById('quoteHistoryList');
@@ -416,17 +425,20 @@ async function saveQuotation() {
             });
         }
 
+// [불러오기] - 저장된 날짜 반영
 async function loadToEditor(id) {
     const doc = await db.collection("quotations").doc(id).get();
     const d = doc.data();
     editingQuoteId = id;
     document.getElementById('quoteTitle').value = d.title;
+    document.getElementById('quoteDate').value = d.date || ""; // 날짜 불러오기
     document.getElementById('quoteCustomer').value = d.customer;
-    document.getElementById('quoteMemo').value = d.memo || ""; // 불러오기
-    document.getElementById('showTotalCheck').checked = (d.showTotal !== undefined) ? d.showTotal : true; // 불러오기
+    document.getElementById('quoteMemo').value = d.memo || "";
+    document.getElementById('showTotalCheck').checked = (d.showTotal !== undefined) ? d.showTotal : true;
     quoteParts = d.items;
     renderQuoteParts();
 }
+
         async function deleteQuotation(id) { if(confirm("해당 견적 자료를 삭제할까요?")) { await db.collection("quotations").doc(id).delete(); loadQuotations(); } }
 
 function resetQuoteForm() {
@@ -443,12 +455,22 @@ async function generatePDF(id) {
     if (!docRef.exists) return;
     const d = docRef.data();
 
+    // 합계 표시 여부에 따른 행 생성 (이 부분이 누락되어 오류가 났었습니다)
+    const totalRow = d.showTotal !== false ? `
+        <tr style="background-color: #f8fafc; border-top: 2px solid #1e293b;">
+            <td colspan="3" style="padding: 20px; text-align: right; font-weight: bold; color: #64748b;">
+                합계 금액 (VAT 별도)
+            </td>
+            <td style="padding: 20px; text-align: right; font-size: 18px; font-weight: 900; color: #4f46e5; white-space: nowrap; width: 160px;">
+                ${d.totalAmount.toLocaleString()} 원
+            </td>
+        </tr>` : '';
+
     const element = document.createElement('div');
     element.style.padding = '20px';
     element.style.width = '190mm';
     element.className = 'bg-white text-slate-900';
 
-// 품명 및 상세 설명 줄바꿈 처리 로직
     const itemsHtml = d.items.map(i => `
         <tr style="border-bottom: 1px solid #e2e8f0;">
             <td style="padding: 10px 12px; text-align: left; vertical-align: top;">
@@ -476,8 +498,7 @@ async function generatePDF(id) {
             <div style="text-align: right; font-size: 11px; line-height: 1.5;">
                 <p>상호: 웰디자인 | 등록번호: 224-05-72328</p>
                 <p>주소: 남양주시 화도읍 마석우리 370-10</p>
-                <p></p>
-                <p>담당: 이상호 (010-9590-9782), 팩스:02-555-6575</p>
+                <p>담당: 이상호 (010-9590-9782), 📠: 02-555-6575</p>
             </div>
         </div>
 
