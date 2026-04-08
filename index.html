@@ -192,17 +192,17 @@
         placeholder="상세 내용을 입력하세요."></textarea>
 </div>
 
-    <div class="col-span-1 space-y-1">
-        <label class="text-[12px] font-black text-indigo-500 uppercase">수량</label>
-        <input type="number" id="tempQty" value="1" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-center font-bold shadow-sm">
-    </div>
-    <div class="col-span-2 space-y-1">
-        <label class="text-[12px] font-black text-indigo-500 uppercase">단가</label>
-        <input type="text" id="tempPrice" oninput="formatCurrency(this)" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-right font-bold shadow-sm">
-    </div>
-    <div class="col-span-1">
-        <button onclick="addPartRow()" class="w-full bg-indigo-600 text-white p-2.5 rounded-lg font-black hover:bg-indigo-700 transition-all shadow-md">＋</button>
-    </div>
+<div class="col-span-2 space-y-1"> <label class="text-[12px] font-black text-indigo-500 uppercase">수량</label>
+    <input type="number" id="tempQty" value="1" 
+        class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-center font-bold shadow-sm text-sm">
+</div>
+<div class="col-span-3 space-y-1"> <label class="text-[12px] font-black text-indigo-500 uppercase">단가</label>
+    <input type="text" id="tempPrice" oninput="formatCurrency(this)" 
+        class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-right font-bold shadow-sm text-sm">
+</div>
+<div class="col-span-1">
+    <button onclick="addPartRow()" class="w-full bg-indigo-600 text-white p-2.5 rounded-lg font-black hover:bg-indigo-700 transition-all shadow-md">＋</button>
+</div>
 </div>
 
 <div class="border rounded-2xl overflow-hidden shadow-sm">
@@ -457,64 +457,67 @@ function resetQuoteForm() {
 }
 async function generatePDF(id) {
     const docRef = await db.collection("quotations").doc(id).get();
-    if (!docRef.exists) return;
+    if (!docRef.exists) {
+        alert("데이터를 찾을 수 없습니다.");
+        return;
+    }
     const d = docRef.data();
 
-    // 합계 표시 여부에 따른 행 생성 (이 부분이 누락되어 오류가 났었습니다)
+    // 1. PDF로 만들 가상 컨테이너 생성
+    const element = document.createElement('div');
+    element.style.padding = '20px';
+    element.style.width = '190mm';
+    element.style.backgroundColor = 'white';
+    element.className = 'bg-white text-slate-900';
+
     const totalRow = d.showTotal !== false ? `
         <tr style="background-color: #f8fafc; border-top: 2px solid #1e293b;">
             <td colspan="3" style="padding: 20px; text-align: right; font-weight: bold; color: #64748b;">
                 합계 금액 (VAT 별도)
             </td>
             <td style="padding: 20px; text-align: right; font-size: 18px; font-weight: 900; color: #4f46e5; white-space: nowrap; width: 160px;">
-                ${d.totalAmount.toLocaleString()} 원
+                ${(d.totalAmount || 0).toLocaleString()} 원
             </td>
         </tr>` : '';
 
-    const element = document.createElement('div');
-    element.style.padding = '20px';
-    element.style.width = '190mm';
-    element.className = 'bg-white text-slate-900';
-
-    const itemsHtml = d.items.map(i => `
+    const itemsHtml = (d.items || []).map(i => `
         <tr style="border-bottom: 1px solid #e2e8f0;">
-          <td style="padding: 10px 12px; text-align: left; vertical-align: top;">
-    <div style="font-weight: bold; font-size: 13px; color: #1e293b; white-space: pre-line;">${i.item}</div>
-    ${i.desc ? `<div style="font-size: 9px; color: #64748b; margin-top: 4px; line-height: 1.4; white-space: pre-line;">${i.desc}</div>` : ''}
-</td>
-
+            <td style="padding: 10px 12px; text-align: left; vertical-align: top;">
+                <div style="font-weight: bold; font-size: 13px; color: #1e293b; white-space: pre-line;">${i.item}</div>
+                ${i.desc ? `<div style="font-size: 9px; color: #64748b; margin-top: 4px; line-height: 1.4; white-space: pre-line;">${i.desc}</div>` : ''}
+            </td>
             <td style="padding: 10px 12px; text-align: center; vertical-align: top;">${i.qty}</td>
-            <td style="padding: 10px 12px; text-align: right; vertical-align: top;">${i.price.toLocaleString()}</td>
+            <td style="padding: 10px 12px; text-align: right; vertical-align: top;">${(i.price || 0).toLocaleString()}</td>
             <td style="padding: 10px 12px; text-align: right; vertical-align: top; font-weight: bold; white-space: nowrap;">
-                ${i.subtotal.toLocaleString()}
+                ${(i.subtotal || 0).toLocaleString()}
             </td>
         </tr>
     `).join('');
 
     element.innerHTML = `
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="font-size: 32px; font-weight: 900; letter-spacing: 10px;">견 적 서</h1>
+        <div style="text-align: center; margin-bottom: 30px; padding-top: 20px;">
+            <h1 style="font-size: 32px; font-weight: 900; letter-spacing: 10px; margin: 0;">견 적 서</h1>
         </div>
 
         <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
             <div>
-                <p style="font-size: 14px;"><strong>고객명:</strong> ${d.customer || '미지정'}</p>
-                <p style="font-size: 11px; color: #64748b;">일자: ${d.date}</p>
+                <p style="font-size: 14px; margin: 5px 0;"><strong>고객명:</strong> ${d.customer || '미지정'}</p>
+                <p style="font-size: 11px; color: #64748b; margin: 5px 0;">일자: ${d.date}</p>
             </div>
-            <div style="text-align: right; font-size: 11px; line-height: 1.5;">
-                <p>상호: 웰디자인 | 등록번호: 224-05-72328</p>
-                <p>주소: 남양주시 화도읍 마석우리 370-10</p>
-                <p>담당: 이상호 (010-9590-9782), 📠: 02-555-6575</p>
+            <div style="text-align: right; font-size: 11px; line-height: 1.6;">
+                <p style="margin: 2px 0;">상호: 웰디자인 | 등록번호: 224-05-72328</p>
+                <p style="margin: 2px 0;">주소: 남양주시 화도읍 마석우리 370-10</p>
+                <p style="margin: 2px 0;">담당: 이상호 (010-9590-9782), 📠: 02-555-6575</p>
             </div>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; margin-bottom: 20px;">
             <thead>
                 <tr style="background-color: #1e293b; color: white;">
-                    <th style="padding: 10px; text-align: left;">품명 및 규격</th>
-                    <th style="padding: 10px; width: 50px; text-align: center;">수량</th>
-                    <th style="padding: 10px; width: 100px; text-align: right;">단가</th>
-                    <th style="padding: 10px; width: 140px; text-align: right;">금액(부가세 별도)</th>
+                    <th style="padding: 12px 10px; text-align: left;">품명 및 사양</th>
+                    <th style="padding: 12px 10px; width: 50px; text-align: center;">수량</th>
+                    <th style="padding: 12px 10px; width: 100px; text-align: right;">단가</th>
+                    <th style="padding: 12px 10px; width: 140px; text-align: right;">금액(VAT별도)</th>
                 </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>
@@ -523,25 +526,42 @@ async function generatePDF(id) {
 
         ${d.memo ? `
         <div style="margin-top: 20px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <p style="font-size: 11px; font-weight: 900; color: #6366f1; margin-bottom: 5px;">별도 내역:</p>
-            <p style="font-size: 12px; color: #334155; white-space: pre-line; line-height: 1.6;">${d.memo}</p>
+            <p style="font-size: 11px; font-weight: 900; color: #6366f1; margin-bottom: 8px;">별도 내역:</p>
+            <p style="font-size: 12px; color: #334155; white-space: pre-line; line-height: 1.6; margin: 0;">${d.memo}</p>
         </div>` : ''}
 
-        <div style="margin-top: 40px; font-size: 10px; color: #94a3b8; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
-            <p>※ 본 견적서는 발행일로부터 15일간 유효합니다.</p>
-            <p>※ 입금 계좌: 국민은행 015-21-0736-980 (이상호)</p>
+        <div style="margin-top: 50px; font-size: 10px; color: #94a3b8; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+            <p style="margin: 3px 0;">※ 본 견적서는 발행일로부터 15일간 유효합니다.</p>
+            <p style="margin: 3px 0;">※ 입금 계좌: 국민은행 015-21-0736-980 (이상호)</p>
         </div>
     `;
 
+    // 2. 중요: 요소를 문서에 추가 (렌더링 보장)
+    document.body.appendChild(element);
+
+    // 3. PDF 옵션 설정
     const options = {
         margin: [10, 10, 10, 10],
         filename: `견적서_${d.customer || '기록'}_${d.date}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 3, useCORS: true, letterRendering: true },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            letterRendering: true,
+            logging: false
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(options).from(element).save();
+    // 4. 생성 및 제거
+    try {
+        await html2pdf().set(options).from(element).save();
+    } catch (error) {
+        console.error("PDF 생성 실패:", error);
+        alert("PDF 생성 중 오류가 발생했습니다.");
+    } finally {
+        document.body.removeChild(element); // 생성 후 가상 요소 제거
+    }
 }
 
         // 기존 V16.6 UI 렌더링 및 필터링 함수 (동일 구조 유지)
