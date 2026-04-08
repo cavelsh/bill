@@ -445,7 +445,7 @@ async function generatePDF(id) {
     element.style.width = '190mm';
     element.className = 'bg-white text-slate-900';
 
- // 품명 및 상세 설명 줄바꿈 처리 로직
+// 품명 및 상세 설명 줄바꿈 처리 로직
     const itemsHtml = d.items.map(i => `
         <tr style="border-bottom: 1px solid #e2e8f0;">
             <td style="padding: 10px 12px; text-align: left; vertical-align: top;">
@@ -459,17 +459,6 @@ async function generatePDF(id) {
             </td>
         </tr>
     `).join('');
-
-    // 합계 행 수정: 금액 칸 너비를 충분히 확보하고 nowrap 적용
-    const totalRow = d.showTotal !== false ? `
-        <tr style="background-color: #f8fafc; border-top: 2px solid #1e293b;">
-            <td colspan="3" style="padding: 20px; text-align: right; font-weight: bold; color: #64748b;">
-                합계 금액 (VAT 별도)
-            </td>
-            <td style="padding: 20px; text-align: right; font-size: 18px; font-weight: 900; color: #4f46e5; white-space: nowrap; width: 160px;">
-                ${d.totalAmount.toLocaleString()} 원
-            </td>
-        </tr>` : '';
 
     element.innerHTML = `
         <div style="text-align: center; margin-bottom: 30px;">
