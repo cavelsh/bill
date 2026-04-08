@@ -202,19 +202,19 @@
             <tr><th class="p-3 text-left">품명</th><th class="p-3 text-center w-20">수량</th><th class="p-3 text-right">단가</th><th class="p-3 text-right">소계</th><th class="p-3 text-center w-16">관리</th></tr>
         </thead>
         <tbody id="quoteListBody" class="divide-y divide-slate-100"></tbody>
-        <tfoot class="bg-slate-50 font-black">
-            <tr>
-                <td colspan="3" class="p-4 text-right text-slate-500">
-                    <label class="inline-flex items-center cursor-pointer mr-4 font-normal text-xs text-slate-400">
-                        <input type="checkbox" id="showTotalCheck" checked class="rounded border-slate-300 mr-1"> 합계 표시
-                    </label>
-                    합계 금액 (부가세 별도)
-                </td>
-                <td id="quoteGrandTotal" class="p-4 text-right text-indigo-600 text-lg">0원</td>
-                <td></td>
-            </tr>
-        </tfoot>
-    </table>
+<tfoot class="bg-slate-50 font-black">
+    <tr>
+        <td colspan="3" class="p-4 text-right text-slate-500">
+            <label class="inline-flex items-center cursor-pointer mr-4 font-normal text-xs text-slate-400">
+                <input type="checkbox" id="showTotalCheck" checked class="rounded border-slate-300 mr-1"> 합계 표시
+            </label>
+            합계 금액 (부가세 별도)
+        </td>
+        <td id="quoteGrandTotal" class="p-4 text-right text-indigo-600 text-lg whitespace-nowrap min-w-[150px]">0원</td>
+        <td></td>
+    </tr>
+</tfoot>
+</table>
 </div>
 
 <div class="mt-4 space-y-2">
@@ -352,11 +352,11 @@ function renderQuoteParts() {
             <tr class="hover:bg-slate-50 transition-colors">
                 <td class="p-3">
                     <div class="font-bold text-slate-700">${p.item}</div>
-                    ${p.desc ? `<div class="text-[11px] text-slate-400 mt-0.5">${p.desc}</div>` : ''}
+                    ${p.desc ? `<div class="text-[11px] text-slate-400 mt-1 leading-relaxed">${p.desc}</div>` : ''}
                 </td>
                 <td class="p-3 text-center font-bold text-slate-500">${p.qty}</td>
                 <td class="p-3 text-right text-slate-600">${p.price.toLocaleString()}</td>
-                <td class="p-3 text-right font-black text-indigo-600">${p.subtotal.toLocaleString()}</td>
+                <td class="p-3 text-right font-black text-indigo-600 whitespace-nowrap">${p.subtotal.toLocaleString()}</td>
                 <td class="p-3 text-center">
                     <div class="flex justify-center gap-2">
                         <button onclick="editPartRow(${p.id})" class="text-blue-500 hover:text-blue-700 text-xs font-bold">수정</button>
@@ -445,31 +445,31 @@ async function generatePDF(id) {
     element.style.width = '190mm';
     element.className = 'bg-white text-slate-900';
 
+ // 품명 및 상세 설명 줄바꿈 처리 로직
     const itemsHtml = d.items.map(i => `
         <tr style="border-bottom: 1px solid #e2e8f0;">
             <td style="padding: 10px 12px; text-align: left; vertical-align: top;">
                 <div style="font-weight: bold; font-size: 13px; color: #1e293b;">${i.item}</div>
-                ${i.desc ? `<div style="font-size: 10px; color: #64748b; margin-top: 3px; line-height: 1.4;">${i.desc}</div>` : ''}
+                ${i.desc ? `<div style="font-size: 10px; color: #64748b; margin-top: 4px; line-height: 1.4;">${i.desc}</div>` : ''}
             </td>
-            <td style="padding: 10px 12px; text-align: center;">${i.qty}</td>
-            <td style="padding: 10px 12px; text-align: right;">${i.price.toLocaleString()}</td>
-            <td style="padding: 10px 12px; text-align: right; font-weight: bold;">${i.subtotal.toLocaleString()}</td>
+            <td style="padding: 10px 12px; text-align: center; vertical-align: top;">${i.qty}</td>
+            <td style="padding: 10px 12px; text-align: right; vertical-align: top;">${i.price.toLocaleString()}</td>
+            <td style="padding: 10px 12px; text-align: right; vertical-align: top; font-weight: bold; white-space: nowrap;">
+                ${i.subtotal.toLocaleString()}
+            </td>
         </tr>
     `).join('');
 
-    // 합계 금액 노출 여부 결정
+    // 합계 행 수정: 금액 칸 너비를 충분히 확보하고 nowrap 적용
     const totalRow = d.showTotal !== false ? `
         <tr style="background-color: #f8fafc; border-top: 2px solid #1e293b;">
-            <td colspan="3" style="padding: 20px; text-align: right; font-weight: bold; color: #64748b;">합계 금액 (VAT 별도)</td>
-            <td style="padding: 20px; text-align: right; font-size: 18px; font-weight: 900; color: #4f46e5;">${d.totalAmount.toLocaleString()} 원</td>
+            <td colspan="3" style="padding: 20px; text-align: right; font-weight: bold; color: #64748b;">
+                합계 금액 (VAT 별도)
+            </td>
+            <td style="padding: 20px; text-align: right; font-size: 18px; font-weight: 900; color: #4f46e5; white-space: nowrap; width: 160px;">
+                ${d.totalAmount.toLocaleString()} 원
+            </td>
         </tr>` : '';
-
-    // 별도 내역 섹션 결정
-    const memoSection = d.memo ? `
-        <div style="margin-top: 20px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #fff;">
-            <p style="font-size: 11px; font-weight: 900; color: #6366f1; margin-bottom: 5px; text-transform: uppercase;">별도 내역:</p>
-            <p style="font-size: 12px; color: #334155; white-space: pre-line; line-height: 1.6;">${d.memo}</p>
-        </div>` : '';
 
     element.innerHTML = `
         <div style="text-align: center; margin-bottom: 30px;">
@@ -483,25 +483,30 @@ async function generatePDF(id) {
             </div>
             <div style="text-align: right; font-size: 11px; line-height: 1.5;">
                 <p>상호: 웰디자인 | 등록번호: 224-05-72328</p>
-                <p>담당: 이상호 (010-9590-9782)</p>
-                <p>팩스: 02-555-6575</p>
+                <p>주소: 남양주시 화도읍 마석우리 370-10</p>
+                <p></p>
+                <p>담당: 이상호 (010-9590-9782), 팩스:02-555-6575</p>
             </div>
         </div>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed;">
             <thead>
                 <tr style="background-color: #1e293b; color: white;">
-                    <th style="padding: 10px; text-align: left;">품명</th>
-                    <th style="padding: 10px; width: 50px;">수량</th>
-                    <th style="padding: 10px; text-align: right; width: 90px;">단가</th>
-                    <th style="padding: 10px; text-align: right; width: 110px;">금액(부가세 별도)</th>
+                    <th style="padding: 10px; text-align: left;">품명 및 규격</th>
+                    <th style="padding: 10px; width: 50px; text-align: center;">수량</th>
+                    <th style="padding: 10px; width: 100px; text-align: right;">단가</th>
+                    <th style="padding: 10px; width: 140px; text-align: right;">금액(부가세 별도)</th>
                 </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>
             <tfoot>${totalRow}</tfoot>
         </table>
 
-        ${memoSection}
+        ${d.memo ? `
+        <div style="margin-top: 20px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <p style="font-size: 11px; font-weight: 900; color: #6366f1; margin-bottom: 5px;">별도 내역:</p>
+            <p style="font-size: 12px; color: #334155; white-space: pre-line; line-height: 1.6;">${d.memo}</p>
+        </div>` : ''}
 
         <div style="margin-top: 40px; font-size: 10px; color: #94a3b8; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
             <p>※ 본 견적서는 발행일로부터 15일간 유효합니다.</p>
@@ -511,8 +516,9 @@ async function generatePDF(id) {
 
     const options = {
         margin: [10, 10, 10, 10],
-        filename: `견적서_${d.customer || '무명'}.pdf`,
-        html2canvas: { scale: 3 },
+        filename: `견적서_${d.customer || '기록'}_${d.date}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 3, useCORS: true, letterRendering: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
