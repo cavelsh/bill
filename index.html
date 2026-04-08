@@ -193,11 +193,11 @@
 </div>
 
     <div class="col-span-1 space-y-1">
-        <label class="text-[14px] font-black text-indigo-500 uppercase">수량</label>
+        <label class="text-[12px] font-black text-indigo-500 uppercase">수량</label>
         <input type="number" id="tempQty" value="1" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-center font-bold shadow-sm">
     </div>
     <div class="col-span-2 space-y-1">
-        <label class="text-[10px] font-black text-indigo-500 uppercase">단가</label>
+        <label class="text-[12px] font-black text-indigo-500 uppercase">단가</label>
         <input type="text" id="tempPrice" oninput="formatCurrency(this)" class="w-full border-2 border-white p-2.5 rounded-lg outline-none text-right font-bold shadow-sm">
     </div>
     <div class="col-span-1">
@@ -208,7 +208,7 @@
 <div class="border rounded-2xl overflow-hidden shadow-sm">
     <table class="w-full text-sm">
         <thead class="bg-slate-900 text-[10px] font-black text-slate-400 uppercase">
-            <tr><th class="p-3 text-left">품명</th><th class="p-3 text-center w-20">수량</th><th class="p-3 text-right">단가</th><th class="p-3 text-right">소계</th><th class="p-3 text-center w-16">관리</th></tr>
+            <tr><th class="p-3 text-left">품명</th><th class="p-3 text-center w-20">수량</th><th class="p-3 text-right">단가</th><th class="p-3 text-right">금액(부가세 별도)</th><th class="p-3 text-center w-16">관리</th></tr>
         </thead>
         <tbody id="quoteListBody" class="divide-y divide-slate-100"></tbody>
 <tfoot class="bg-slate-50 font-black">
