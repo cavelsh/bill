@@ -579,78 +579,67 @@ async function generatePDF(id) {
             renderUI(filtered, targetYear);
         }
 
-function renderUI(listItems, targetYear) {
-    if (!isAuthenticated) return;
-    // 계산을 위한 변수 초기화
-    let s = { 
-        q1S:0, q1P:0, q1N:0, // 1~6월 매출, 매입, 무자료
-        q2S:0, q2P:0, q2N:0, // 7~12월 매출, 매입, 무자료
-        curMS:0, curMP:0, curMN:0, curMPF:0, 
-        totalU:0, totalP:0 
-    };
-    
-    const curYM = new Date().toISOString().substring(0, 7);
-    const listBody = document.getElementById('data-list');
-    listBody.innerHTML = "";
+        function renderUI(listItems, targetYear) {
+            if (!isAuthenticated) return;
+            let s = { q1S:0, q1P:0, q1N:0, q2S:0, q2P:0, q2N:0, curMS:0, curMP:0, curMN:0, curMPF:0, totalU:0, totalP:0 };
+            const curYM = new Date().toISOString().substring(0, 7);
+            const listBody = document.getElementById('data-list');
+            listBody.innerHTML = "";
 
-    allData.forEach(b => {
-        const dateParts = (b.date || "").split("-");
-        const y = dateParts[0]; 
-        const m = parseInt(dateParts[1]) || 0;
-        const isTaxInvoice = (b.paymentMethod === "세금계산서");
-        const isRepair = (b.item || "").includes("수리");
-        const isPending = (b.paymentMethod === "미처리");
+            allData.forEach(b => {
+                const dateParts = (b.date || "").split("-");
+                const y = dateParts[0]; const m = parseInt(dateParts[1]) || 0;
+                const isTaxInvoice = (b.paymentMethod === "세금계산서");
+                const isRepair = (b.item || "").includes("수리");
+                const isPending = (b.paymentMethod === "미처리");
 
-        if(y === targetYear) {
-            // 세금계산서 기반 정산 (수리 및 미처리 제외)
-            if(isTaxInvoice && !isRepair && !isPending) {
-                if(m >= 1 && m <= 6) { 
-                    s.q1S += (b.salePrice || 0); 
-                    s.q1P += (b.purchasePrice || 0); 
-                    s.q1N += (b.noDataAmount || 0); 
+                if(y === targetYear) {
+                    if(isTaxInvoice && !isRepair && !isPending) {
+                        if(m >= 1 && m <= 6) { s.q1S += (b.salePrice||0); s.q1P += (b.purchasePrice||0); s.q1N += (b.noDataAmount||0); }
+                        else if(m >= 7 && m <= 12) { s.q2S += (b.salePrice||0); s.q2P += (b.purchasePrice||0); s.q2N += (b.noDataAmount||0); }
+                        if(b.date.startsWith(curYM)) { s.curMS += (b.salePrice || 0); s.curMP += (b.purchasePrice || 0); s.curMN += (b.noDataAmount || 0); }
+                    }
+                    if(b.date.startsWith(curYM) && !isPending) { s.curMPF += (b.difference || 0); }
+                    if(!isPending) s.totalP += (b.difference || 0);
+                    if(b.unpaidStatus === "미납") s.totalU += (b.salePrice || 0);
                 }
-                else if(m >= 7 && m <= 12) { 
-                    s.q2S += (b.salePrice || 0); 
-                    s.q2P += (b.purchasePrice || 0); 
-                    s.q2N += (b.noDataAmount || 0); 
-                }
-                if(b.date.startsWith(curYM)) { 
-                    s.curMS += (b.salePrice || 0); 
-                    s.curMP += (b.purchasePrice || 0); 
-                    s.curMN += (b.noDataAmount || 0); 
-                }
-            }
-            // 전역 통계
-            if(b.date.startsWith(curYM) && !isPending) { s.curMPF += (b.difference || 0); }
-            if(!isPending) s.totalP += (b.difference || 0);
-            if(b.unpaidStatus === "미납") s.totalU += (b.salePrice || 0);
+            });
+
+            listItems.forEach(b => {
+                const isUnpaid = (b.unpaidStatus === "미납");
+                const isPending = (b.paymentMethod === "미처리");
+                const fmt = (v) => Number(v || 0).toLocaleString();
+                let rowStyle = isUnpaid ? "bg-rose-50 border-l-4 border-rose-500" : (isPending ? "bg-amber-50 border-l-4 border-amber-400" : "hover:bg-slate-50");
+
+                listBody.innerHTML += `
+                    <tr class="border-b ${rowStyle} whitespace-nowrap transition-all">
+                        <td class="p-4 text-[11px] font-bold text-slate-400">${b.date}</td>
+                        <td class="p-4"><div class="flex items-center gap-2 font-black text-slate-800">${b.customer}${isUnpaid ? '<span class="animate-pulse-red bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded-md">미납🚨</span>' : ''}</div></td>
+                        <td class="p-4 text-center text-[10px] font-black text-slate-500">${b.paymentMethod}</td>
+                        <td class="p-4 text-right text-orange-600 font-bold">${fmt(b.noDataAmount)}</td>
+                        <td class="p-4 text-right text-slate-400">${fmt(b.purchasePrice)}</td>
+                        <td class="p-4 text-right font-black ${isUnpaid ? 'text-rose-600' : 'text-slate-900'}">${fmt(b.salePrice)}</td>
+                        <td class="p-4 text-right font-black text-blue-600 bg-white/30">${fmt(b.difference)}</td>
+                        <td class="p-4 text-center space-x-1">
+                            <button onclick="editDoc('${b.id}')" class="text-[10px] font-bold border px-2 py-1.5 rounded-lg bg-white shadow-sm">수정</button>
+                            <button onclick="deleteDoc('${b.id}')" class="text-[10px] font-bold border border-rose-100 text-rose-500 px-2 py-1.5 rounded-lg bg-white shadow-sm">삭제</button>
+                        </td>
+                    </tr>`;
+            });
+
+            const msk = (v) => v.toLocaleString() + "원";
+            document.getElementById('q1-sales').innerText = msk(s.q1S);
+            document.getElementById('q1-purchase').innerText = msk(s.q1P);
+            document.getElementById('q1-nodata').innerText = msk(s.q1N);
+            document.getElementById('q2-sales').innerText = msk(s.q2S);
+            document.getElementById('q2-purchase').innerText = msk(s.q2P);
+            document.getElementById('q2-nodata').innerText = msk(s.q2N);
+            document.getElementById('cur-month-sales').innerText = msk(s.curMS);
+            document.getElementById('cur-month-purchase').innerText = msk(s.curMP + s.curMN);
+            document.getElementById('cur-month-profit').innerText = msk(s.curMPF);
+            document.getElementById('total-unpaid').innerText = msk(s.totalU);
+            document.getElementById('total-profit').innerText = msk(s.totalP);
         }
-    });
-
-    const msk = (v) => v.toLocaleString() + "원";
-    
-    // --- 수정된 부분: 매출 - (매입 + 무자료) = 차액(순익) 표시 ---
-    
-    // 1~6월 표시
-    document.getElementById('q1-sales').innerText = msk(s.q1S); // 매출
-    document.getElementById('q1-purchase').innerText = msk(s.q1P + s.q1N); // 총매입(매입+무자료)
-    document.getElementById('q1-nodata').innerText = msk(s.q1S - (s.q1P + s.q1N)); // 차액(순익)
-    
-    // 7~12월 표시
-    document.getElementById('q2-sales').innerText = msk(s.q2S); // 매출
-    document.getElementById('q2-purchase').innerText = msk(s.q2P + s.q2N); // 총매입(매입+무자료)
-    document.getElementById('q2-nodata').innerText = msk(s.q2S - (s.q2P + s.q2N)); // 차액(순익)
-
-    // 하단 요약 바 업데이트
-    document.getElementById('cur-month-sales').innerText = msk(s.curMS);
-    document.getElementById('cur-month-purchase').innerText = msk(s.curMP + s.curMN);
-    document.getElementById('cur-month-profit').innerText = msk(s.curMPF);
-    document.getElementById('total-unpaid').innerText = msk(s.totalU);
-    document.getElementById('total-profit').innerText = msk(s.totalP);
-
-    // 테이블 리스트 렌더링 (기존 코드 유지)
-    // ... listItems.forEach 로직 ...
-}
 
         // 초기화 로직 (V16.6 유지)
         window.onload = () => {
