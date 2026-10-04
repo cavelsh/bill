@@ -709,25 +709,40 @@ function filterList() {
             const listBody = document.getElementById('data-list');
             listBody.innerHTML = "";
 
-            allData.forEach(b => {
-                const dateParts = (b.date || "").split("-");
-                const y = dateParts[0]; const m = parseInt(dateParts[1]) || 0;
-                const isTaxInvoice = (b.paymentMethod === "세금계산서");
-                const isRepair = (b.item || "").includes("수리");
-                const isPending = (b.paymentMethod === "미처리");
+allData.forEach(b => {
+    const dateParts = (b.date || "").split("-");
+    const y = dateParts[0]; 
+    const m = parseInt(dateParts[1]) || 0;
 
-                if(y === targetYear) {
-                    if(isTaxInvoice && !isRepair && !isPending) {
-                        if(m >= 1 && m <= 6) { s.q1S += (b.salePrice||0); s.q1P += (b.purchasePrice||0); s.q1N += (b.noDataAmount||0); }
-                        else if(m >= 7 && m <= 12) { s.q2S += (b.salePrice||0); s.q2P += (b.purchasePrice||0); s.q2N += (b.noDataAmount||0); }
-                        if(b.date.startsWith(curYM)) { s.curMS += (b.salePrice || 0); s.curMP += (b.purchasePrice || 0); s.curMN += (b.noDataAmount || 0); }
-                    }
-                    if(b.date.startsWith(curYM) && !isPending) { s.curMPF += (b.difference || 0); }
-                    if(!isPending) s.totalP += (b.difference || 0);
-                    if(b.unpaidStatus === "미납") s.totalU += (b.salePrice || 0);
-                }
-            });
+    // ★ [수정] 세금계산서 또는 카드 결제를 증빙 집계 대상(isTaxInvoice)에 포함
+    const isTaxInvoice = (b.paymentMethod === "세금계산서" || b.paymentMethod === "카드 결제");
+    const isRepair = (b.item || "").includes("수리");
+    const isPending = (b.paymentMethod === "미처리");
 
+    if(y === targetYear) {
+        // 증빙(세금계산서 + 카드결제) 데이터면서 수리 및 미처리가 아닌 건만 집계
+        if(isTaxInvoice && !isRepair && !isPending) {
+            if(m >= 1 && m <= 6) { 
+                s.q1S += (b.salePrice||0); 
+                s.q1P += (b.purchasePrice||0); 
+                s.q1N += (b.noDataAmount||0); 
+            }
+            else if(m >= 7 && m <= 12) { 
+                s.q2S += (b.salePrice||0); 
+                s.q2P += (b.purchasePrice||0); 
+                s.q2N += (b.noDataAmount||0); 
+            }
+            if(b.date.startsWith(curYM)) { 
+                s.curMS += (b.salePrice || 0); 
+                s.curMP += (b.purchasePrice || 0); 
+                s.curMN += (b.noDataAmount || 0); 
+            }
+        }
+        if(b.date.startsWith(curYM) && !isPending) { s.curMPF += (b.difference || 0); }
+        if(!isPending) s.totalP += (b.difference || 0);
+        if(b.unpaidStatus === "미납") s.totalU += (b.salePrice || 0);
+    }
+});
             listItems.forEach(b => {
     const isUnpaid = (b.unpaidStatus === "미납");
     const isPending = (b.paymentMethod === "미처리");
